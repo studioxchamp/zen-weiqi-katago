@@ -1,7 +1,9 @@
-name: Build MeChampZ GO KataGo WASM
+name: Build and Validate Zen Weiqi KataGo WASM
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [ main ]
   push:
     branches: [ main, master ]
 
@@ -11,7 +13,7 @@ permissions:
 jobs:
   build-browser-engine:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - name: Checkout package
         uses: actions/checkout@v4
@@ -34,10 +36,40 @@ jobs:
           source "$HOME/emsdk/emsdk_env.sh"
           bash build-katago.sh
 
-      - name: Upload Netlify publish folder
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check threaded build exports and files
+        run: |
+          test -s site/katago/kataeval-mt.js
+          test -s site/katago/kataeval-mt.wasm
+          test -s site/katago/model-b10c128.bin.gz
+          node --input-type=module -e "import {readFileSync} from 'node:fs'; const js=readFileSync('site/katago/kataeval-mt.js','utf8'); for (const s of ['mainScriptUrlOrBlob','PThread','pthread']) if (!js.includes(s)) throw new Error('threaded JS missing '+s); const w=readFileSync('site/katago/kataeval-mt.wasm'); if (w[0]!==0||w[1]!==97||w[2]!==115||w[3]!==109) throw new Error('invalid WASM magic'); console.log('PASS threaded JS markers and WASM magic');"
+          node engine-src/web/test-search-mt.mjs
+
+      - name: Install Chromium test runner
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Test model, eval, search, cancel, and game move in Chromium
+        run: node engine-src/web/test-browser-mt.mjs
+
+      - name: Upload tested Netlify publish folder
         uses: actions/upload-artifact@v4
         with:
-          name: mechampz-go-katago-site
+          name: zen-weiqi-netlify-site-tested
           path: site/
           if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zen-weiqi-katago-validation-report
+          path: .validation/kata-mt-browser.json
+          if-no-files-found: ignore
           retention-days: 14
