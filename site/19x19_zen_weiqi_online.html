@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>หมากล้อม 19x19 — Zen Weiqi Online</title>
-  <script src="https://cdn.tailwindcss.com" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Noto+Serif+Thai:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Noto+Serif+Thai:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
       --bg-deep: #181410;
@@ -409,20 +409,11 @@
         </select>
 
         <p id="rankDescription" class="text-[11px] sm:text-xs text-amber-200/65 leading-relaxed">
-          KataGo จะจำกัดจำนวนรอบค้นหาและเวลาคิดตามระดับที่เลือก
-        </p>
-        <div id="kataGoStatusBox" class="px-3 py-2 rounded-xl bg-[#18130e] border border-emerald-800/40 text-xs">
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-emerald-200/80">🧠 KataGo Engine</span>
-            <span id="kataGoEngineStatus" class="font-mono font-semibold text-amber-300">ยังไม่เริ่มโหลด</span>
-          </div>
-        </div>
-        <p class="text-[10px] text-amber-200/45 leading-relaxed">
-          * ชื่อคิว/ดั้งเป็นระดับความท้าทายโดยประมาณจากการจำกัดการค้นหา ไม่ใช่การจัดอันดับฝีมือที่ผ่านการเทียบมาตรฐาน
+          ประมวลผล 800 รอบต่อตา เปิดหมากมุมมาตรฐาน รักษาสมดุลพื้นที่ทั่วกระดาน และไม่ถมห้องตัวเอง
         </p>
 
         <!-- Real-Time AI Score Evaluation Monitor -->
-        <div id="aiScoreMonitorBox" class="hidden px-3 py-2 rounded-xl bg-[#18130e] border border-amber-800/40 flex items-center justify-between gap-2 text-xs">
+        <div id="aiScoreMonitorBox" class="px-3 py-2 rounded-xl bg-[#18130e] border border-amber-800/40 flex items-center justify-between gap-2 text-xs">
           <span class="text-amber-200/75 flex items-center gap-1.5">
             <span>📊 ประเมินแต้ม (AI):</span>
           </span>
@@ -448,12 +439,6 @@
 
         <!-- Initial Lobby State (Create or Join) -->
         <div id="onlineLobbyControls" class="space-y-2.5">
-          <div class="space-y-1">
-            <label for="onlinePlayerNameInput" class="text-amber-200/80 text-xs font-semibold">👤 ชื่อของคุณในห้อง</label>
-            <input id="onlinePlayerNameInput" type="text" maxlength="20" autocomplete="nickname"
-              placeholder="พิมพ์ชื่อที่ต้องการให้คู่แข่งเห็น"
-              class="w-full px-3 py-2 rounded-xl bg-[#18130e] border border-amber-700/50 text-amber-50 placeholder-amber-200/35 text-sm focus:outline-none focus:border-amber-400" />
-          </div>
           <div class="flex items-center justify-between gap-2 text-xs">
             <label for="onlineTimeSelect" class="text-amber-200/80 font-medium shrink-0">⏱️ เวลาต่อคน:</label>
             <select id="onlineTimeSelect" class="flex-1 px-2.5 py-1.5 rounded-lg bg-[#18130e] border border-amber-700/50 text-amber-50 text-xs focus:outline-none focus:border-amber-400">
@@ -534,26 +519,6 @@
                 ขอบคุณสำหรับเกมครับ 🙇‍♂️
               </button>
             </div>
-          </div>
-
-          <!-- Live Text Chat -->
-          <div id="onlineChatBox" class="space-y-2 p-3 rounded-xl bg-[#18130e] border border-amber-700/40">
-            <div class="flex items-center justify-between">
-              <div class="text-xs font-bold text-amber-200">💬 แชทระหว่างเล่น</div>
-              <div id="onlineChatCount" class="text-[10px] text-amber-200/45">0 ข้อความ</div>
-            </div>
-            <div id="onlineChatMessages" role="log" aria-live="polite"
-              class="h-40 overflow-y-auto space-y-2 rounded-lg bg-[#110d0a] border border-amber-900/30 p-2 text-xs">
-              <div class="text-center text-amber-200/40 py-5">เริ่มสนทนากับคู่แข่งได้เลยครับ</div>
-            </div>
-            <form id="onlineChatForm" class="flex gap-2">
-              <input id="onlineChatInput" type="text" maxlength="300" autocomplete="off"
-                placeholder="พิมพ์ข้อความ..."
-                class="flex-1 min-w-0 px-3 py-2 rounded-xl bg-[#110d0a] border border-amber-700/50 text-amber-50 placeholder-amber-200/35 text-xs focus:outline-none focus:border-amber-400" />
-              <button type="submit" id="btnSendChat"
-                class="zen-btn px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs">ส่ง</button>
-            </form>
-            <div class="text-[10px] text-amber-200/40">ข้อความจะแสดงเฉพาะผู้เล่นในห้องนี้</div>
           </div>
 
           <!-- Rematch & Leave Room -->
@@ -915,47 +880,47 @@
     const RANK_META = {
       '8k': {
         badge: '8 คิว (เริ่มต้น)',
-        desc: 'ค้นหาสั้นมากและสุ่มทางเลือกมากขึ้น เหมาะสำหรับผู้เริ่มต้น'
+        desc: 'ไม่เดินรูปสามเหลี่ยมทึบ ไม่ถมพื้นที่ตัวเอง รู้จักรักษาห้องและเปิดจุดใหญ่เส้น 3–4'
       },
       '7k': {
         badge: '7 คิว (พื้นฐาน)',
-        desc: 'ค้นหาจำนวนรอบน้อย ลดความแม่นยำลงเพื่อให้เล่นง่ายขึ้น'
+        desc: 'รู้จักหนีอาตาริ สร้างปากเสือและรูปสร้าง 2 ห้อง พร้อมเปิดมุมและด้านข้างมาตรฐาน'
       },
       '6k': {
         badge: '6 คิว (ฝึกฝน)',
-        desc: 'เพิ่มจำนวนรอบค้นหา แต่ยังเปิดโอกาสให้เลือกหมากรอง'
+        desc: 'ประเมินอาณาเขตด้วย Bouzy Dilation รู้จักทิ้งหมากตาย (Tenuki) ไปแย่งจุดใหญ่'
       },
       '5k': {
         badge: '5 คิว (ปานกลาง)',
-        desc: 'ระดับกลาง ใช้การค้นหา KataGo ระยะสั้นถึงปานกลาง'
+        desc: 'เปิดหมากมุมและกระโดด 1 ตา/ตาหมากรุกอย่างเป็นธรรมชาติ ไม่สร้างก้อนหมากตัน'
       },
       '4k': {
         badge: '4 คิว (พัฒนา)',
-        desc: 'ค้นหาลึกขึ้น ลดการสุ่มหมากที่ไม่ใช่ตัวเลือกหลัก'
+        desc: 'ตรวจจับกลุ่มหมากที่ยังไม่มี 2 ห้องเพื่อสร้างรูปสร้างห้องหรือสู้จับกินแข่งลมหายใจ'
       },
       '3k': {
         badge: '3 คิว (ก้าวหน้า)',
-        desc: 'ค้นหาลึกขึ้นอีก เหมาะกับผู้เล่นที่อ่านเกมได้คล่อง'
+        desc: 'อ่านอาตาริ ชิโจขั้นบันได และจุดตัดคมชัด ลดจุดอ่อนของกลุ่มหมากทั่วกระดาน'
       },
       '2k': {
         badge: '2 คิว (เชี่ยวชาญ)',
-        desc: 'เพิ่มจำนวนรอบและเวลาคิดเพื่อเลือกหมากที่แม่นขึ้น'
+        desc: 'คุมสมดุลระหว่างอิทธิพลกลางกระดานและพื้นที่มุม พร้อมบุกลดทอนพื้นที่ใหญ่'
       },
       '1k': {
         badge: '1 คิว (ใกล้ดั้ง)',
-        desc: 'ใช้การค้นหาค่อนข้างลึกและลดการสุ่มทางเลือก'
+        desc: 'วิเคราะห์รูปหมากขั้นสูง การบุก 3-3 / ลดทอนพื้นที่ และอ่านเป็นตายกลุ่มใหญ่'
       },
       '1d': {
         badge: '1 ดั้ง (ระดับสูง)',
-        desc: 'ค้นหาลึก ใช้เวลาคิดมากขึ้น'
+        desc: 'MCTS + RAVE ผสาน Bouzy Territory อ่านชิโจลึก สร้างรูปสร้างห้อง และสู้ Semeai'
       },
       '2d': {
         badge: '2 ดั้ง (ยอดฝีมือ)',
-        desc: 'ค้นหาลึกมากขึ้น โดยจำกัดการสุ่มเลือกหมาก'
+        desc: 'วิเคราะห์เป็นตาย 2 ห้อง จุดตายสร้างห้อง (Nakade) และอ่านชิโจสุดขอบกระดาน'
       },
       '3d': {
         badge: '3 ดั้ง (ระดับอาจารย์)',
-        desc: 'ระดับสูงสุดของโปรไฟล์นี้ ใช้งบค้นหาและเวลาคิดมากที่สุด'
+        desc: 'ประมวลผลเชิงลึก MCTS-RAVE + Bouzy Territory อ่านเป็นตายและปิดเกมระดับสูง'
       }
     };
 
@@ -2737,203 +2702,7 @@
       }
     }
 
-
-    // KataGo WebGPU adapter. The legacy heuristic AI remains as a visible fallback
-    // only when the real engine cannot start on this browser/device.
-    class KataGoController {
-      constructor(fallbackController) {
-        this.fallback = fallbackController;
-        this.worker = null;
-        this.ready = false;
-        this.initPromise = null;
-        this.requestId = 0;
-        this.pending = new Map();
-        this.generation = 0;
-        this.fallbackNoticeShown = false;
-        this.netFile = 'model-b10c128.bin.gz';
-        this.engineBase = 'katago/';
-        this.profiles = {
-          '8k': { cap: 12,   visits: 24,   ms: 900,  temp: 0.90, policyTemp: 1.60 },
-          '7k': { cap: 24,   visits: 40,   ms: 1100, temp: 0.82, policyTemp: 1.52 },
-          '6k': { cap: 45,   visits: 70,   ms: 1300, temp: 0.72, policyTemp: 1.44 },
-          '5k': { cap: 80,   visits: 120,  ms: 1600, temp: 0.60, policyTemp: 1.35 },
-          '4k': { cap: 140,  visits: 200,  ms: 2000, temp: 0.48, policyTemp: 1.27 },
-          '3k': { cap: 220,  visits: 320,  ms: 2500, temp: 0.36, policyTemp: 1.20 },
-          '2k': { cap: 350,  visits: 500,  ms: 3000, temp: 0.25, policyTemp: 1.14 },
-          '1k': { cap: 600,  visits: 800,  ms: 3600, temp: 0.15, policyTemp: 1.09 },
-          '1d': { cap: 900,  visits: 1200, ms: 4500, temp: 0.08, policyTemp: 1.04 },
-          '2d': { cap: 1500, visits: 1900, ms: 5500, temp: 0.03, policyTemp: 1.00 },
-          '3d': { cap: 0,    visits: 2800, ms: 7000, temp: 0.00, policyTemp: 1.00 }
-        };
-      }
-
-      setStatus(message, good = false) {
-        const el = document.getElementById('kataGoEngineStatus');
-        if (!el) return;
-        el.textContent = String(message);
-        el.className = 'font-mono font-semibold ' + (good ? 'text-emerald-300' : 'text-amber-300');
-      }
-
-      call(message, transfer = []) {
-        return new Promise((resolve, reject) => {
-          if (!this.worker) return reject(new Error('KataGo worker ยังไม่พร้อม'));
-          const id = ++this.requestId;
-          this.pending.set(id, { resolve, reject });
-          this.worker.postMessage({ id, ...message }, transfer);
-        });
-      }
-
-      createWorker() {
-        if (this.worker) return;
-        this.worker = new Worker(this.engineBase + 'kata-worker.js');
-        this.worker.onmessage = (event) => {
-          const data = event.data || {};
-          if (data.diag) {
-            this.setStatus('เตรียม Engine…');
-            return;
-          }
-          if (data.progress) {
-            this.setStatus(`กำลังคิด · ${Number(data.nv || 0).toLocaleString()} visits`);
-            return;
-          }
-          const pending = this.pending.get(data.id);
-          if (!pending) return;
-          this.pending.delete(data.id);
-          if (data.ok) pending.resolve(data);
-          else pending.reject(new Error(data.error || 'KataGo engine error'));
-        };
-        this.worker.onerror = (event) => {
-          const error = new Error(event.message || 'KataGo worker crashed');
-          for (const pending of this.pending.values()) pending.reject(error);
-          this.pending.clear();
-          try { this.worker.terminate(); } catch (_) {}
-          this.worker = null;
-          this.ready = false;
-          this.initPromise = null;
-          this.setStatus('Engine ขัดข้อง · ใช้ AI สำรอง');
-        };
-      }
-
-      async ensureReady() {
-        if (this.ready) return;
-        if (!window.crossOriginIsolated || typeof SharedArrayBuffer === 'undefined') {
-          throw new Error('เว็บไซต์ยังไม่ได้เปิด COOP/COEP สำหรับ WebAssembly threads');
-        }
-        this.createWorker();
-        if (!this.initPromise) {
-          this.initPromise = (async () => {
-            this.setStatus('กำลังโหลด KataGo…');
-            const [wasmResponse, jsResponse] = await Promise.all([
-              fetch(this.engineBase + 'kataeval-mt.wasm'),
-              fetch(this.engineBase + 'kataeval-mt.js')
-            ]);
-            if (!wasmResponse.ok || !jsResponse.ok) {
-              throw new Error('ไม่พบไฟล์ KataGo WASM ที่ Build แล้ว');
-            }
-            const [wasmBinary, jsText] = await Promise.all([
-              wasmResponse.arrayBuffer(),
-              jsResponse.text()
-            ]);
-            const modelResponse = await fetch(this.engineBase + this.netFile, { method: 'HEAD' });
-            if (!modelResponse.ok) throw new Error('ไม่พบไฟล์โมเดล KataGo');
-            const info = await this.call({
-              type: 'init',
-              netFile: this.netFile,
-              boardSize: BOARD_SIZE,
-              wasmBinary,
-              jsText,
-              forceCpu: false,
-              fp16: false,
-              optimism: 0
-            }, [wasmBinary]);
-            this.ready = true;
-            this.setStatus(`พร้อมใช้งาน · ${info.backend}`, true);
-            return info;
-          })();
-        }
-        try {
-          await this.initPromise;
-        } catch (error) {
-          this.initPromise = null;
-          throw error;
-        }
-      }
-
-      getMoveSequence() {
-        const moves = [];
-        // KataGo's adapter recognizes a leading run of 2+ black setup stones as handicap.
-        if (state.handicap >= 2 && state.mode === 'ai') {
-          const count = Math.min(9, state.handicap);
-          for (let i = 0; i < count; i++) {
-            const point = HANDICAP_POINTS[i];
-            moves.push({ loc: point[0] * BOARD_SIZE + point[1], col: BLACK });
-          }
-        }
-        for (const move of state.moveHistory) {
-          moves.push({ loc: move.idx, col: move.color });
-        }
-        return moves;
-      }
-
-      getSearchThreads() {
-        const cores = Math.max(1, Number(navigator.hardwareConcurrency) || 2);
-        const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-        return Math.max(1, Math.min(mobile ? 2 : 6, cores - 1 || 1));
-      }
-
-      async requestMove(params) {
-        const generation = this.generation;
-        try {
-          await this.ensureReady();
-          if (generation !== this.generation) return { cancelled: true };
-
-          const profile = this.profiles[params.rankKey] || this.profiles['5k'];
-          await this.call({
-            type: 'strength',
-            visits: profile.cap,
-            temp: profile.temp,
-            policyTemp: profile.policyTemp
-          });
-          if (generation !== this.generation) return { cancelled: true };
-
-          this.setStatus('KataGo กำลังวิเคราะห์…');
-          const result = await this.call({
-            type: 'search',
-            moves: this.getMoveSequence(),
-            toPlay: params.aiColor,
-            komi: params.komi,
-            visits: profile.visits,
-            ms: profile.ms,
-            threads: this.getSearchThreads(),
-            noPonder: true
-          });
-          if (generation !== this.generation || result.superseded) return { cancelled: true };
-          if (typeof result.best !== 'number') throw new Error('KataGo ไม่ได้ส่งตาเดินกลับมา');
-          this.setStatus(`พร้อม · ${Number(result.nv || 0).toLocaleString()} visits`, true);
-          return result.best;
-        } catch (error) {
-          if (generation !== this.generation) return { cancelled: true };
-          this.setStatus('KataGo ไม่พร้อม · ใช้ AI สำรอง');
-          if (!this.fallbackNoticeShown) {
-            this.fallbackNoticeShown = true;
-            showToast(`KataGo ยังใช้งานไม่ได้ (${error.message}) จึงใช้ AI สำรองชั่วคราว`, 'info');
-          }
-          return await this.fallback.requestMove(params);
-        }
-      }
-
-      cancelPending() {
-        this.generation++;
-        if (this.fallback) this.fallback.cancelPending();
-        if (this.worker && this.ready) {
-          const id = ++this.requestId;
-          // The worker increments its poll token immediately, stopping the active search.
-          this.worker.postMessage({ id, type: 'cancel' });
-        }
-      }
-    }
-
-    const aiController = new KataGoController(new AiController());
+    const aiController = new AiController();
 
     // =========================================================================
     // 5. 19x19 KAYA WOOD GOBAN CANVAS RENDERER
@@ -3266,10 +3035,7 @@
       roomCode: '',
       isHost: false,
       onlineRole: BLACK,
-      onlineConnected: false,
-      blackPlayerName: 'ผู้เล่นดำ',
-      whitePlayerName: 'ผู้เล่นขาว',
-      chatMessages: []
+      onlineConnected: false
     };
 
     const gobanCanvas = document.getElementById('gobanCanvas');
@@ -3559,11 +3325,6 @@
       });
 
       state.aiThinking = false;
-
-      if (aiResult && aiResult.cancelled) {
-        renderGame();
-        return;
-      }
 
       if (state.gameOver || state.scoringMode || state.currentTurn !== state.aiColor) {
         renderGame();
@@ -4258,79 +4019,7 @@
       renderGame();
     }
 
-    function getOnlineDisplayName() {
-      const input = document.getElementById('onlinePlayerNameInput');
-      const name = String(input?.value || '').trim().replace(/[<>]/g, '').slice(0, 20);
-      if (input) input.value = name;
-      if (!name) {
-        showToast('กรุณาพิมพ์ชื่อก่อนสร้างหรือเข้าร่วมห้องครับ', 'error');
-        input?.focus();
-        return '';
-      }
-      try { localStorage.setItem('zenWeiqiPlayerName', name); } catch (e) {}
-      return name;
-    }
-
-    function renderOnlineChat() {
-      const box = document.getElementById('onlineChatMessages');
-      const count = document.getElementById('onlineChatCount');
-      if (!box || !count) return;
-      count.textContent = `${state.chatMessages.length} ข้อความ`;
-      box.replaceChildren();
-      if (!state.chatMessages.length) {
-        const empty = document.createElement('div');
-        empty.className = 'text-center text-amber-200/40 py-5';
-        empty.textContent = 'เริ่มสนทนากับคู่แข่งได้เลยครับ';
-        box.appendChild(empty);
-        return;
-      }
-      state.chatMessages.slice(-80).forEach((item) => {
-        const row = document.createElement('div');
-        row.className = `flex ${item.mine ? 'justify-end' : 'justify-start'}`;
-        const bubble = document.createElement('div');
-        bubble.className = `max-w-[88%] rounded-xl px-3 py-2 ${item.mine ? 'bg-amber-700/35 border border-amber-500/30 text-amber-50' : 'bg-[#30251b] border border-stone-600/40 text-stone-100'}`;
-        const who = document.createElement('div');
-        who.className = 'text-[10px] font-bold text-amber-300/80 mb-0.5';
-        who.textContent = item.name;
-        const body = document.createElement('div');
-        body.className = 'whitespace-pre-wrap break-words';
-        body.textContent = item.text;
-        const time = document.createElement('div');
-        time.className = 'text-[9px] text-amber-100/35 text-right mt-1';
-        time.textContent = item.time;
-        bubble.append(who, body, time);
-        row.appendChild(bubble);
-        box.appendChild(row);
-      });
-      box.scrollTop = box.scrollHeight;
-    }
-
-    function sendOnlineChat(text) {
-      const clean = String(text || '').trim().slice(0, 300);
-      if (!clean || !state.conn || !state.conn.open || !state.onlineConnected) return;
-      const myName = state.onlineRole === BLACK ? state.blackPlayerName : state.whitePlayerName;
-      state.conn.send({ type: 'CHAT', text: clean, name: myName });
-      state.chatMessages.push({
-        name: myName, text: clean, mine: true,
-        time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
-      });
-      renderOnlineChat();
-    }
-
-    function addRemoteChatMessage(msg) {
-      const clean = String(msg.text || '').slice(0, 300);
-      const name = String(msg.name || 'คู่แข่ง').slice(0, 20);
-      if (!clean) return;
-      state.chatMessages.push({
-        name, text: clean, mine: false,
-        time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
-      });
-      renderOnlineChat();
-    }
-
     function createOnlineRoom() {
-      const displayName = getOnlineDisplayName();
-      if (!displayName) return;
       if (typeof Peer === 'undefined') {
         showToast('ไม่สามารถโหลดระบบ PeerJS ได้ กรุณาตรวจสอบอินเทอร์เน็ต', 'error');
         return;
@@ -4346,10 +4035,6 @@
       state.isHost = true;
       state.onlineRole = BLACK;
       state.onlineConnected = false;
-      state.blackPlayerName = displayName;
-      state.whitePlayerName = 'รอคู่แข่ง';
-      state.chatMessages = [];
-      renderOnlineChat();
       setupNewBoard({ handicap: 0, timeLimit: selectedTime });
 
       updatePeerStatusUI('connecting');
@@ -4388,8 +4073,6 @@
     }
 
     function joinOnlineRoom(rawInput) {
-      const displayName = getOnlineDisplayName();
-      if (!displayName) return;
       if (typeof Peer === 'undefined') {
         showToast('ไม่สามารถโหลดระบบ PeerJS ได้', 'error');
         return;
@@ -4410,10 +4093,6 @@
       state.isHost = false;
       state.onlineRole = WHITE;
       state.onlineConnected = false;
-      state.whitePlayerName = displayName;
-      state.blackPlayerName = 'กำลังเชื่อมต่อ';
-      state.chatMessages = [];
-      renderOnlineChat();
 
       updatePeerStatusUI('connecting');
       const peer = new Peer();
@@ -4461,8 +4140,7 @@
             timeLimitPerPlayer: state.timeLimitPerPlayer,
             blackTimeRemaining: state.blackTimeRemaining,
             whiteTimeRemaining: state.whiteTimeRemaining,
-            gameStarted: state.gameStarted,
-            blackPlayerName: state.blackPlayerName
+            gameStarted: state.gameStarted
           });
           showToast('เพื่อนเข้าห้องแล้ว! กด "▶ เริ่มเกม" เพื่อเริ่มนับเวลา', 'success');
         } else {
@@ -4488,33 +4166,7 @@
             state.blackTimeRemaining = msg.blackTimeRemaining;
             state.whiteTimeRemaining = msg.whiteTimeRemaining;
             state.gameStarted = Boolean(msg.gameStarted);
-            state.blackPlayerName = String(msg.blackPlayerName || 'ผู้เล่นดำ').slice(0, 20);
-            if (state.conn && state.conn.open) {
-              state.conn.send({ type: 'HELLO', whitePlayerName: state.whitePlayerName });
-            }
             renderGame();
-            break;
-
-          case 'HELLO':
-            state.whitePlayerName = String(msg.whitePlayerName || 'ผู้เล่นขาว').slice(0, 20);
-            if (state.conn && state.conn.open) {
-              state.conn.send({
-                type: 'NAME_SYNC',
-                blackPlayerName: state.blackPlayerName,
-                whitePlayerName: state.whitePlayerName
-              });
-            }
-            renderGame();
-            break;
-
-          case 'NAME_SYNC':
-            state.blackPlayerName = String(msg.blackPlayerName || state.blackPlayerName).slice(0, 20);
-            state.whitePlayerName = String(msg.whitePlayerName || state.whitePlayerName).slice(0, 20);
-            renderGame();
-            break;
-
-          case 'CHAT':
-            addRemoteChatMessage(msg);
             break;
 
           case 'START_GAME':
@@ -4568,8 +4220,6 @@
       }
       state.onlineConnected = false;
       state.roomCode = '';
-      state.chatMessages = [];
-      renderOnlineChat();
       document.getElementById('onlineLobbyControls').classList.remove('hidden');
       document.getElementById('onlineActiveRoomBox').classList.add('hidden');
       document.getElementById('onlineReactionsBox').classList.add('hidden');
@@ -4757,8 +4407,8 @@
         document.getElementById('blackPlayerName').textContent = state.playerColor === BLACK ? 'หมากดำ (คุณ)' : 'หมากดำ (AI)';
         document.getElementById('whitePlayerName').textContent = state.playerColor === WHITE ? 'หมากขาว (คุณ)' : 'หมากขาว (AI)';
       } else {
-        document.getElementById('blackPlayerName').textContent = `⚫ ${state.blackPlayerName || 'ผู้เล่นดำ'}`;
-        document.getElementById('whitePlayerName').textContent = `⚪ ${state.whitePlayerName || 'ผู้เล่นขาว'}`;
+        document.getElementById('blackPlayerName').textContent = state.onlineRole === BLACK ? 'หมากดำ (คุณ)' : 'หมากดำ (เพื่อน)';
+        document.getElementById('whitePlayerName').textContent = state.onlineRole === WHITE ? 'หมากขาว (คุณ)' : 'หมากขาว (เพื่อน)';
       }
 
       document.getElementById('blackCaptures').textContent = state.blackCaptures;
@@ -5032,16 +4682,6 @@
     });
 
     // Online 2P Buttons
-    document.getElementById('onlineChatForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const input = document.getElementById('onlineChatInput');
-      sendOnlineChat(input.value);
-      input.value = '';
-      input.focus();
-    });
-    document.getElementById('onlinePlayerNameInput').value = (() => {
-      try { return localStorage.getItem('zenWeiqiPlayerName') || ''; } catch (e) { return ''; }
-    })();
     document.getElementById('btnCreateRoom').addEventListener('click', createOnlineRoom);
     document.getElementById('btnJoinRoom').addEventListener('click', () => {
       joinOnlineRoom(document.getElementById('inputJoinRoomId').value);
