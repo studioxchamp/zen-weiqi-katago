@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>saiGo · offline KataGo (analyze + play)</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 15px/1.5 system-ui, sans-serif; margin: 0; padding: 22px; display: flex; gap: 26px; flex-wrap: wrap; align-items: flex-start; }
+  h1 { font-size: 19px; margin: 0 0 6px; }
+  #boardWrap { position: relative; display: inline-block; }
+  #overlay { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 500; }
+  .panel { width: 300px; }
+  .row { margin: 10px 0; }
+  .mono { font-family: ui-monospace, monospace; }
+  .status { padding: 8px 10px; border-radius: 8px; background: #8883; }
+  .ok { color: #1a8917; } .bad { color: #c0392b; }
+  button { font: inherit; padding: 6px 11px; border-radius: 6px; cursor: pointer; margin: 2px 0; }
+  .muted { opacity: .72; font-size: 13px; }
+  .bar { height: 26px; border-radius: 6px; overflow: hidden; display: flex; border: 1px solid #8884; }
+  .bar .b { background: #111; } .bar .w { background: #eee; }
+  .bar span { color: transparent; }
+  .wr { display: flex; justify-content: space-between; font-weight: 600; }
+  .metrics { width: 250px; }
+  .metrics h2 { font-size: 16px; margin: 0 0 4px; display: flex; justify-content: space-between; align-items: baseline; }
+  .pill { font: 600 11px/1 ui-monospace, monospace; padding: 3px 7px; border-radius: 999px; background: #8883; }
+  .pill.live { background: #1a891722; color: #1a8917; }
+  .pill.run { background: #c0780022; color: #c07800; }
+  .metricgrid { display: grid; grid-template-columns: auto 1fr; gap: 5px 14px; margin: 10px 0; }
+  .metricgrid > div:nth-child(odd) { opacity: .6; }
+  .metricgrid > div:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, monospace; }
+  .gbar { height: 22px; border-radius: 6px; overflow: hidden; display: flex; border: 1px solid #8884; background: #8882; }
+  .gbar .adv { background: #1a8917; }
+  #m_pv { word-spacing: 4px; line-height: 1.7; opacity: .9; }
+</style>
+</head>
+<body>
+  <div>
+    <h1>saiGo · offline KataGo — analyze &amp; play</h1>
+    <div class="muted">A real KataGo net, evaluated entirely in your browser on WebGPU (no server).
+      Play a real game — moves are replayed through KataGo's rules (captures, ko/superko)
+      and fed to the net as history. The overlay shows the policy and the win-rate updates;
+      "Engine plays" takes the top move.</div>
+    <div id="boardWrap" style="margin-top:10px;">
+      <div id="board"></div>
+      <canvas id="overlay"></canvas>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="row status" id="status">loading engine…</div>
+    <div class="row">Net: <select id="net"></select> Size: <select id="size"></select>
+      Handi: <select id="hc"></select> Komi: <input id="komi" type="number" value="7.5" step="0.5" style="width:54px">
+      <label title="Opt-in fp16: ~2x on fp16-stable (modern) nets; g170 nets overflow to garbage"><input type="checkbox" id="fp16"> fp16</label>
+      <span class="muted" id="netnote"></span></div>
+    <div class="row">
+      <div class="wr"><span>Black <span id="bwr">–</span></span><span><span id="wwr">–</span> White</span></div>
+      <div class="bar"><div class="b" id="barB" style="width:50%">.</div><div class="w" id="barW" style="width:50%">.</div></div>
+    </div>
+    <div class="row">Best move: <span class="mono" id="best">–</span> · Score: <span class="mono" id="score">–</span></div>
+    <div class="row">To move: <span class="mono" id="tomove">Black</span> · Eval: <span class="mono" id="evtime">–</span></div>
+    <div class="row">
+      <button id="play">Engine plays ▶</button>
+      <button id="pass">Pass</button>
+      <button id="undo">Undo</button>
+      <button id="clear">Clear</button>
+      <label style="margin-left:6px;"><input type="checkbox" id="owner"> ownership</label>
+    </div>
+    <div class="row">
+      <button id="thinkkata" title="KataGo's real Search (PUCT heuristics + PV) on a worker thread">Search ▶</button>
+      <button id="measure" title="Search the position at growing visit budgets and show how the move/win-rate converge">Measure ▶</button>
+      visits <input id="visits" type="number" value="400" min="1" max="20000" style="width:64px">
+      ms <input id="ms" type="number" value="3000" min="100" max="120000" style="width:70px">
+      threads <input id="threads" type="number" value="4" min="1" max="32" style="width:46px">
+      strength <select id="strength" title="Weaken the engine: cap visits + move-temperature + root-policy flattening (visits,moveTemp,policyTemp)">
+        <option value="0,0,1">Full</option>
+        <option value="600,0.15,1">Strong</option>
+        <option value="80,0.35,1.1">Intermediate</option>
+        <option value="12,0.55,1.3">Casual</option>
+        <option value="1,0.8,1.6">Beginner</option>
+      </select>
+      <label style="margin-left:6px;"><input type="checkbox" id="searchplay"> engine searches</label>
+    </div>
+    <div class="row mono" id="searchout" style="min-height:1.4em"></div>
+    <div class="row">
+      <button id="selfplay" title="The engine plays itself, searching each move">Self-play ▶</button>
+      <button id="savesgf" title="Download the current game as SGF">Save SGF ⤓</button>
+      <button id="savedata" title="Download self-play training data (policy + value targets) as JSON">Save data ⤓</button>
+      <span class="muted mono" id="gameinfo"></span>
+    </div>
+    <div class="row">
+      Review SGF: <input type="file" id="sgffile" accept=".sgf,application/x-go-sgf" style="width:150px">
+      <button id="rfirst" title="first">⏮</button><button id="rprev" title="prev move">◀</button><button id="rnext" title="next move">▶</button><button id="rlast" title="last">⏭</button>
+      <button id="rscan" title="Scan the whole game — flag mistakes (win-rate swings) &amp; tricky spots (policy surprise)">Scan 🔎</button>
+      <span class="muted mono" id="reviewinfo"></span>
+    </div>
+    <div id="scanflags" class="mono" style="font-size:12px; margin-top:4px;"></div>
+    <div class="row muted" id="adapter">adapter: –</div>
+    <div class="row muted">Powered by <span class="mono">kataeval</span> (cpp/kataeval) — the clean
+      KataGo-eval dependency compiled to WASM. Same forward pass that's validated byte-identical
+      to the Eigen CPU backend natively.</div>
+  </div>
+
+  <div class="panel metrics">
+    <h2>Bot thinking <span class="pill" id="m_state">idle</span></h2>
+    <div class="row">
+      <div class="wr"><span>best <span class="mono" id="m_best">–</span></span><span class="mono" id="m_score">–</span></div>
+      <div class="gbar"><div class="adv" id="m_adv" style="width:50%"></div></div>
+      <div class="muted" id="m_wrlabel" style="margin-top:4px;">win-rate (to move) <span class="mono" id="m_wr">–</span></div>
+    </div>
+    <div class="metricgrid">
+      <div>visits</div><div id="m_visits">–</div>
+      <div>speed</div><div id="m_nps">–</div>
+      <div>time</div><div id="m_time">–</div>
+      <div>threads</div><div id="m_threads">–</div>
+      <div>tree</div><div id="m_reuse">–</div>
+      <div>memory</div><div id="m_mem">–</div>
+    </div>
+    <div class="muted" style="margin-top:8px;">position read <span style="font-weight:400;">(what search sees)</span></div>
+    <div class="metricgrid" style="margin:4px 0;">
+      <div>raw → searched</div><div id="m_delta" title="instant NN read vs after search — what reading buys">–</div>
+      <div>score ±σ</div><div id="m_stdev" title="score uncertainty in points (expected stdev)">–</div>
+      <div>surprise</div><div id="m_surprise" title="how far search moved from the raw policy — high = tactical/tricky">–</div>
+      <div>decisiveness</div><div id="m_decis" title="1 = one clear move, 0 = many playable (from search-move entropy)">–</div>
+    </div>
+    <div class="muted" style="margin-top:8px;">candidate moves <span style="font-weight:400;">(win% · score · visits · ±σ)</span></div>
+    <div id="m_cand" class="mono" style="font-size:13px; min-height:2em;"><span class="muted">play Search to rank moves</span></div>
+    <div class="muted" style="margin-top:8px;">principal variation</div>
+    <div class="row mono" id="m_pv" style="min-height:3.4em;">–</div>
+  </div>
+
+  <div class="panel" style="width:auto;">
+    <h2 style="font-size:16px; margin:0 0 6px;">Engine's line
+      <span class="muted" style="font-weight:400;">— train of thought (PV)</span></h2>
+    <div id="pvboard"></div>
+    <div class="row muted mono" id="pvtext" style="max-width:360px; min-height:1.4em;">
+      Search to watch the engine read ahead — its expected best line, numbered, updating live.</div>
+  </div>
+
+<script src="vendor/wgo.min.js"></script>
+<script>
+(async function () {
+  // Board size from ?size= (9/13/19; default 19). KataGo nets are fully convolutional,
+  // so any size works — the engine just gets boardSize at load.
+  const N = (() => { const s = parseInt(new URLSearchParams(location.search).get('size')); return (s === 9 || s === 13) ? s : 19; })();
+  const HW = N * N, BOARD_PX = 600;
+  const $ = id => document.getElementById(id);
+  // WGo treats a '#'-prefixed background as a CSS color (no image) — avoids the missing
+  // wood1.jpg texture (which 404s -> black board). A warm goban tone instead.
+  const WOOD = '#e8c887';
+  const board = new WGo.Board($('board'), { size: N, width: BOARD_PX, background: WOOD });
+  const pvBoard = new WGo.Board($('pvboard'), { size: N, width: 360, background: WOOD });
+  // A–T / 1–N coordinates around both boards. WGo draws them ~0.75 field outside the
+  // grid, so widen the visible section by a field to make room (else they'd clip).
+  if (WGo.coordinates) for (const b of [board, pvBoard]) { b.setSection(-1); b.addCustomObject(WGo.coordinates); }
+  // Render the engine's principal variation on the 2nd board: current stones, then the
+  // PV played out as numbered, alternating moves from the side to move (its read-ahead).
+  function renderPV(pv, pvVisits) {
+    pvBoard.removeAllObjects();
+    placeStones(pvBoard);
+    let col = toPlay, num = 0;
+    for (const loc of (pv || [])) {
+      if (loc >= 0) {
+        const x = loc % N, y = Math.floor(loc / N);
+        num++;
+        pvBoard.addObject({ x, y, c: col === 1 ? WGo.B : WGo.W });
+        pvBoard.addObject({ x, y, type: 'LB', text: String(num) });
+      }
+      col = col === 1 ? 2 : 1;
+    }
+    // Annotate the PV text with per-move visit counts — confidence decays down the line.
+    $('pvtext').textContent = (pv && pv.length)
+      ? pv.map((loc, i) => ptName(loc) + ((pvVisits && pvVisits[i]) ? `(${pvVisits[i].toLocaleString()})` : '')).join(' ')
+      : '(current position)';
+  }
+  const grid = Array.from({ length: N }, () => new Array(N).fill(0)); // displayed board (from boardOut)
+  const moves = [];            // played sequence: {loc: y*N+x or -1 pass, col: 1|2}
+  const MAXMV = 2048;
+  let toPlay = 1;  // 1 black, 2 white
+  const overlay = $('overlay'), octx = overlay.getContext('2d');
+  function syncOverlay() {
+    const c = document.querySelector('#board canvas'); if (!c) return;
+    overlay.width = c.width; overlay.height = c.height;
+    overlay.style.width = (c.style.width || c.width + 'px'); overlay.style.height = (c.style.height || c.height + 'px');
+    overlay.style.left = c.offsetLeft + 'px'; overlay.style.top = c.offsetTop + 'px';
+  }
+  syncOverlay();
+
+  // helpers / state declared before the load block (which calls analyze()).
+  const idx = (x, y) => y * N + x;
+  const clamp01 = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
+  // Side to move after k moves — O(1) parity. White(2) moves first under handicap, else Black(1).
+  const tpAfter = (k) => (((hc > 0 ? 1 : 0) + k) & 1) ? 2 : 1;
+  // Win-rate -> hue: red (0%) through yellow to green (100%), side-to-move perspective.
+  const hueForWr = (wr) => Math.round(clamp01(wr) * 120);
+  // Draw the current position's stones onto a WGo board (shared by the main + PV boards).
+  function placeStones(b) {
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++)
+      if (grid[x][y]) b.addObject({ x, y, c: grid[x][y] === 1 ? WGo.B : WGo.W });
+  }
+  let lastPolicy = null, lastBest = -1, lastOwner = null, lastCand = null, lastSearch = null;
+  let trainRecord = [];  // per-move {policy target = visit dist, value = searched win-rate} for training export
+  const ptName = l => l < 0 ? 'pass' : `${'ABCDEFGHJKLMNOPQRST'[l % N]}${N - Math.floor(l / N)}`;
+  // The single engine lives in a worker (threaded kataeval-mt): analysis + search both
+  // go through it — one net load, shared NN cache, main thread free. Declared up here
+  // so the load block below (which calls ensureKataWorker) is past their TDZ.
+  let kataWorker = null, kataReqId = 0, kataInited = false, kataInfo = null, engineDead = false;
+  const kataPending = new Map();
+
+  // --- net selection, increasing strength. b5c192 (our v17 nested-bottleneck+q net) is the
+  // default: tiny like b6 but far stronger — beats g170-b6 ~81% on raw policy (~+252 Elo) and
+  // ~56% at 100-visit MCTS. Has the optimism/q channels (v17), so ?optimism= works on it. ---
+  const NETS = {
+    'b5c192':     { file: 'model-b5c192.bin.gz',     label: 'b5c192 · v17 nbt+q · default (7 MB)' },
+    'b6c96':      { file: 'model-b6c96.bin.gz',      label: 'b6c96 · g170, fast (3.8 MB)' },
+    'b10c128':    { file: 'model-b10c128.bin.gz',    label: 'b10c128 · g170, stronger (11 MB)' },
+    'b20c256':    { file: 'model-b20c256.bin.gz',    label: 'b20c256 · g170 (87 MB)' },
+    'b18c384nbt': { file: 'model-b18c384nbt.bin.gz', label: 'b18c384nbt · nested-bottleneck (94 MB)' },
+    'b4c256nbttf': { file: 'model-b4c256nbttf.bin.gz', label: 'b4c256 · v17 transformer (test net, weak)' },
+  };
+  const qs = new URLSearchParams(location.search);
+  const netKey = NETS[qs.get('net')] ? qs.get('net') : 'b5c192';
+  const sel = $('net');
+  for (const k in NETS) { const o = document.createElement('option'); o.value = k; o.textContent = NETS[k].label; if (k === netKey) o.selected = true; sel.appendChild(o); }
+  sel.onchange = () => { const u = new URLSearchParams(location.search); u.set('net', sel.value); location.search = u.toString(); }; // reload with new net
+  const szSel = $('size');
+  for (const s of [19, 13, 9]) { const o = document.createElement('option'); o.value = s; o.textContent = s + '×' + s; if (s === N) o.selected = true; szSel.appendChild(o); }
+  szSel.onchange = () => { const u = new URLSearchParams(location.search); u.set('size', szSel.value); location.search = u.toString(); }; // reload with new size
+
+  // Handicap: black setup stones on the star points (white moves first). ?hc= reloads.
+  function handicapStones(n, sz) {
+    if (n < 1) return [];
+    const m = sz >= 13 ? 3 : 2, lo = m, hi = sz - 1 - m, mid = (sz - 1) / 2;
+    const UL = [lo,lo], UR = [hi,lo], LL = [lo,hi], LR = [hi,hi], C = [mid,mid],
+          T = [mid,lo], B = [mid,hi], L = [lo,mid], R = [hi,mid];
+    return ({ 1:[UR], 2:[UR,LL], 3:[UR,LL,LR], 4:[UL,UR,LL,LR], 5:[UL,UR,LL,LR,C],
+              6:[UL,UR,LL,LR,L,R], 7:[UL,UR,LL,LR,L,R,C], 8:[UL,UR,LL,LR,L,R,T,B],
+              9:[UL,UR,LL,LR,L,R,T,B,C] })[n] || [];
+  }
+  const hc = (() => { const h = parseInt(qs.get('hc')); return (h >= 1 && h <= 9) ? h : 0; })();
+  const hcSel = $('hc');
+  for (const h of [0,1,2,3,4,5,6,7,8,9]) { const o = document.createElement('option'); o.value = h; o.textContent = h === 0 ? 'none' : h; if (h === hc) o.selected = true; hcSel.appendChild(o); }
+  hcSel.onchange = () => { const u = new URLSearchParams(location.search); u.set('hc', hcSel.value); location.search = u.toString(); };
+  $('fp16').checked = qs.has('fp16');
+  $('fp16').onchange = () => { const u = new URLSearchParams(location.search); if ($('fp16').checked) u.set('fp16', '1'); else u.delete('fp16'); location.search = u.toString(); };
+  // handicap black stones precede the game; the engine sees them before the played moves.
+  const hcMoves = handicapStones(hc, N).map(([x, y]) => ({ loc: y * N + x, col: 1 }));
+  const engineMoves = () => hcMoves.concat(moves);
+  $('komi').value = hc > 0 ? 0.5 : 7.5;   // handicap games conventionally use 0.5 komi
+  // Per-batch GPU latency is ~fixed, so more search threads -> bigger batches -> more
+  // nnEvals/s — up to ~one per core (oversubscription then hurts the NN server thread).
+  $('threads').value = Math.max(2, Math.min(16, (navigator.hardwareConcurrency || 4) - 1));
+  const komiVal = () => { const k = parseFloat($('komi').value); return isNaN(k) ? 0 : k; };
+  toPlay = hc > 0 ? 2 : 1;                 // white moves first under handicap
+
+  // Fetch a net with persistent caching (Cache API) — shared with the search worker
+  // (same origin), so each net downloads once and survives refreshes. The big nets
+  // (b20c256 = 87 MB) then load instantly on reload. Falls back to a plain fetch if
+  // the Cache API is unavailable.
+  async function cachedNet(url, onProgress) {
+    let cache = null;
+    try { cache = await caches.open('saigo-nets-v1'); } catch (_) { cache = null; }
+    if (cache) {
+      const hit = await cache.match(url);
+      if (hit) { onProgress && onProgress('loading ' + url + ' (cached)'); return await hit.arrayBuffer(); }
+    }
+    onProgress && onProgress('downloading ' + url + ' (first time — caching for next refresh)…');
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('fetch ' + url + ' -> ' + res.status);
+    if (cache) { try { await cache.put(url, res.clone()); } catch (_) {} }
+    return await res.arrayBuffer();
+  }
+
+  // --- load engine (the threaded worker is the ONE engine: analysis + search) ---
+  let ready = false;
+  let searchBest = -2;            // highlighted searched move (-2 = none, -1 = pass)
+  try {
+    if (!self.crossOriginIsolated)
+      throw new Error('page is not cross-origin isolated (COOP/COEP) — the threaded engine needs SharedArrayBuffer; serve via scripts/serve-demo-tls.sh');
+    $('status').textContent = 'starting engine (WebGPU, threaded)…';
+    const info = await ensureKataWorker();   // creates the worker + loads the net once
+    ready = true;
+    $('status').innerHTML = 'engine: <span class="ok">ready</span> · KataGo ' + netKey + ' on ' + info.backend;
+    $('adapter').textContent = 'backend: ' + info.backend + ' · threaded worker engine · add ?cpu to force CPU';
+    await analyze();
+  } catch (e) { $('status').innerHTML = 'engine: <span class="bad">error</span> — ' + (e.message || e); return; }
+
+  async function analyze() {
+    if (!ready) return;
+    try {
+      setBotState('idle');   // an eval stops any background ponder (position changed)
+      const t0 = performance.now();
+      // Worker replays the sequence (captures + ko/superko + recent-move features) and
+      // returns the board + raw policy/value/ownership.
+      const r = await kataCall({ type: 'eval', moves: engineMoves().slice(0, MAXMV), toPlay, komi: komiVal(), owner: $('owner').checked });
+      const dt = (performance.now() - t0).toFixed(0);
+      const pol = r.policy, val = r.value;
+      // Sync the displayed board to the replayed position (shows captures), then redraw.
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) grid[x][y] = r.board[idx(x, y)];
+      renderBoard();
+
+      // value: probabilities straight from the net (P white win / loss); lead in points.
+      const wWhite = val[0] * 100, wBlack = val[1] * 100;
+      $('wwr').textContent = wWhite.toFixed(1) + '%'; $('bwr').textContent = wBlack.toFixed(1) + '%';
+      $('barW').style.width = wWhite + '%'; $('barB').style.width = wBlack + '%';
+      $('score').textContent = (val[4] >= 0 ? '+' : '') + val[4].toFixed(1) + ' (W)';  // white lead (points)
+      $('evtime').textContent = dt + ' ms';
+      $('tomove').textContent = toPlay === 1 ? 'Black' : 'White';
+
+      // policy: already probabilities (illegal = -1); pick the argmax over legal moves.
+      lastPolicy = new Float32Array(HW + 1);
+      let best = -1, bestP = -1;
+      for (let i = 0; i <= HW; i++) { const p = pol[i]; if (p < 0) continue; lastPolicy[i] = p; if (p > bestP) { bestP = p; best = i; } }
+      lastBest = best;
+      $('best').textContent = best === HW ? `pass (${(bestP*100).toFixed(1)}%)`
+        : `${'ABCDEFGHJKLMNOPQRST'[best % N]}${N - Math.floor(best / N)} (${(bestP*100).toFixed(1)}%)`;
+
+      lastOwner = r.owner;
+      lastCand = null; renderCandidates(null);  // position changed — clear search candidates
+      drawOverlay();
+      renderPV([]);   // position changed — reset the 2nd board to the current stones
+    } catch (e) {
+      $('status').innerHTML = 'eval failed: <span class="bad">' + (e.message || e) + '</span>';
+    }
+  }
+
+  function drawOverlay() {
+    syncOverlay(); octx.clearRect(0, 0, overlay.width, overlay.height);
+    const sr = board.stoneRadius;
+    // ownership tint
+    if ($('owner').checked && lastOwner) {
+      const own = lastOwner;
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+        const v = own[idx(x, y)]; if (Math.abs(v) < 0.05) continue;
+        // whiteOwnerMap is white-positive: v>0 = white controls (light), v<0 = black (dark).
+        octx.fillStyle = v > 0 ? `rgba(235,235,235,${Math.min(.5, v*.5)})` : `rgba(20,20,20,${Math.min(.45, -v*.45)})`;
+        octx.fillRect(board.getX(x) - sr, board.getY(y) - sr, sr*2, sr*2);
+      }
+    }
+    if (lastCand && lastCand.length) {
+      // candidate moves (after a search): a disc per move, sized by visit share and
+      // colored by win-rate (red→yellow→green for the side to move), labelled win-rate%.
+      const maxV = Math.max(...lastCand.map(c => c.visits), 1);
+      for (const c of lastCand) {
+        if (c.loc < 0) continue;
+        const x = c.loc % N, y = Math.floor(c.loc / N);
+        const r = Math.max(sr * 0.42, sr * (0.5 + 0.5 * Math.sqrt(c.visits / maxV)));
+        const hue = hueForWr(c.wr);
+        octx.beginPath(); octx.arc(board.getX(x), board.getY(y), r, 0, 7);
+        octx.fillStyle = `hsla(${hue},62%,44%,0.82)`; octx.fill();
+        octx.fillStyle = 'rgba(255,255,255,0.96)';
+        octx.font = `600 ${Math.round(r * 0.8)}px ui-monospace, monospace`;
+        octx.textAlign = 'center'; octx.textBaseline = 'middle';
+        octx.fillText((c.wr * 100).toFixed(0), board.getX(x), board.getY(y));
+      }
+    } else {
+      // policy dots on empty points (no search yet — raw net intuition)
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+        if (grid[x][y] !== 0) continue;
+        const p = lastPolicy ? lastPolicy[idx(x, y)] : 0; if (p < 0.002) continue;
+        const r = Math.max(2, Math.min(sr * 0.95, sr * Math.sqrt(p) * 2.2));
+        octx.beginPath(); octx.arc(board.getX(x), board.getY(y), r, 0, 7);
+        octx.fillStyle = (idx(x, y) === lastBest) ? 'rgba(40,140,250,0.85)' : 'rgba(40,140,250,0.40)';
+        octx.fill();
+      }
+    }
+    // searched best move — red ring
+    if (searchBest >= 0) {
+      octx.beginPath(); octx.arc(board.getX(searchBest % N), board.getY(Math.floor(searchBest / N)), sr * 0.7, 0, 7);
+      octx.lineWidth = 3; octx.strokeStyle = 'rgba(220,40,40,0.9)'; octx.stroke();
+    }
+  }
+
+  // --- the worker engine: analysis + search off the main thread (needs isolation) ---
+  function kataCall(msg, transfer) {
+    return new Promise((resolve, reject) => {
+      if (engineDead) return reject(new Error('engine crashed — reload to try another net'));
+      const id = ++kataReqId; kataPending.set(id, { resolve, reject });
+      kataWorker.postMessage({ id, ...msg }, transfer || []);
+    });
+  }
+  // Push the strength selector (visits cap, move temperature) to the engine. No-op until
+  // the worker is up; re-sent after init so a page-load default takes effect.
+  async function applyStrength() {
+    if (!kataInited) return;
+    const [visits, temp, policyTemp] = ($('strength').value || '0,0,1').split(',').map(Number);
+    try { await kataCall({ type: 'strength', visits, temp, policyTemp }); } catch (_) {}
+  }
+  $('strength').onchange = applyStrength;
+  async function ensureKataWorker() {
+    if (engineDead) throw new Error('engine crashed — reload to try another net');
+    if (!self.crossOriginIsolated)
+      throw new Error('page is not cross-origin isolated (COOP/COEP) — wasm threads unavailable');
+    if (!kataWorker) {
+      kataWorker = new Worker('kata-worker.js');
+      kataWorker.onmessage = (e) => {
+        if (e.data.diag) { console.log('[kata]', e.data.diag); $('searchout').textContent = 'KataGo · ' + e.data.diag; return; }
+        if (e.data.progress) {   // live search/ponder stats — stream them into the panel
+          applySearchResult(e.data, e.data.threads);
+          setBotState(e.data.state + '…', e.data.state === 'pondering' ? 'live' : 'run');
+          return;
+        }
+        const p = kataPending.get(e.data.id); if (!p) return;
+        kataPending.delete(e.data.id);
+        e.data.ok ? p.resolve(e.data) : p.reject(new Error(e.data.error));
+      };
+      kataWorker.onerror = (ev) => {
+        // A wasm abort/trap (e.g. a net that produces NaN or trips the threaded-WASM
+        // memory trap) fires this once PER pthread as they die — an unstoppable storm.
+        // Kill the worker on the first fatal error so it can't keep firing, reject
+        // everything pending, and surface ONE clean message instead of the console flood.
+        if (engineDead) return;
+        engineDead = true;
+        try { kataWorker.terminate(); } catch (_) {}
+        for (const p of kataPending.values()) p.reject(new Error('engine crashed: ' + (ev.message || 'fatal')));
+        kataPending.clear();
+        selfPlaying = false; $('selfplay').textContent = 'Self-play ▶';
+        scanning = false; $('rscan').textContent = 'Scan 🔎';
+        setBotState('crashed', 'run');
+        $('status').innerHTML = 'engine: <span class="bad">crashed on this net</span> — ' +
+          (/nonfinite|unalign|Aborted/i.test(ev.message || '') ?
+            'the net produced NaN or ran out of threaded-WASM memory (common for big nets like b18 in-browser). Try a smaller net' :
+            (ev.message || 'fatal error')) + ' · <a href="#" onclick="location.reload()">reload</a>';
+      };
+    }
+    if (!kataInited) {
+      // Fetch the wasm, the module JS, AND the net HERE on the main thread — over a
+      // self-signed/overridden cert, a worker's fetch() and its nested new Worker(https)
+      // both fail. We hand the worker the wasm bytes (-> wasmBinary) and the JS text
+      // (-> a Blob it gives emscripten as mainScriptUrlOrBlob, so pthread workers spawn
+      // from a blob: URL); the net we just cache here so the worker reads it from the
+      // shared Cache (no worker fetch).
+      $('status').textContent = 'loading engine…';
+      const [wasmBuf, jsText] = await Promise.all([
+        fetch('kataeval-mt.wasm').then(r => r.arrayBuffer()),
+        fetch('kataeval-mt.js').then(r => r.text()),
+      ]);
+      try { await cachedNet(NETS[netKey].file, m => $('status').textContent = m); }
+      catch (e) { throw new Error('net "' + netKey + '" not bundled — re-run build-eval.sh' + (netKey === 'b6c96' || netKey === 'b10c128' ? '' : ' with $B20_NET / $B18_NET')); }
+      kataInfo = await kataCall({ type: 'init', netFile: NETS[netKey].file, boardSize: N, wasmBinary: wasmBuf, jsText, forceCpu: qs.has('cpu'), fp16: qs.has('fp16'), optimism: parseFloat(qs.get('optimism')) || 0 }, [wasmBuf]);
+      kataInited = true;
+      await applyStrength();   // apply the current strength selection to the fresh engine
+    }
+    return kataInfo;
+  }
+  function setBotState(text, cls) { const e = $('m_state'); e.textContent = text; e.className = 'pill' + (cls ? ' ' + cls : ''); }
+  // Apply a search result (live-stream frame or final) to the whole UI: metrics panel, PV
+  // board, candidate list, search-corrected ownership tint, best-move ring. One place so the
+  // progress stream, kataThink, and measureSweep can't drift.
+  function applySearchResult(r, threads) {
+    renderMetrics(r, threads ?? r.threads);
+    renderPV(r.pv, r.pvVisits);
+    lastCand = r.cand; renderCandidates(r.cand);
+    if (r.ownership) lastOwner = r.ownership;   // tree-averaged (search-corrected) territory
+    searchBest = r.best; drawOverlay();
+  }
+  function renderMetrics(r, threads) {
+    const wr = r.wr * 100;
+    $('m_best').textContent = ptName(r.best);
+    $('m_score').textContent = (r.score >= 0 ? '+' : '') + r.score.toFixed(1);
+    $('m_adv').style.width = wr.toFixed(1) + '%';
+    $('m_wr').textContent = wr.toFixed(1) + '%';
+    $('m_visits').textContent = r.nv.toLocaleString();
+    $('m_nps').textContent = r.nps.toLocaleString() + '/s';
+    $('m_time').textContent = r.ms.toLocaleString() + ' ms';
+    $('m_threads').textContent = threads;
+    $('m_reuse').textContent = r.reused ? 'reused ✓' : 'fresh';
+    if (r.mem) $('m_mem').textContent = (r.mem / 1048576).toFixed(0) + ' MB';
+    $('m_pv').textContent = r.pv.map(ptName).join(' ') || '–';
+    renderInsights(r);
+  }
+  // Root insight metrics: the searched values vs the instant NN read, the score
+  // uncertainty, and two one-number position descriptors (surprise, decisiveness).
+  function renderInsights(r) {
+    if (r.rawWr == null) return;
+    const dW = (r.wr - r.rawWr) * 100, dS = r.score - r.rawScore;
+    const sign = v => (v >= 0 ? '+' : '') + v.toFixed(1);
+    // instant → searched, with the correction reading applied
+    $('m_delta').innerHTML = `${(r.rawWr*100).toFixed(0)}% → <b>${(r.wr*100).toFixed(0)}%</b> ` +
+      `<span class="${Math.abs(dW) < 0.5 ? 'muted' : (dW >= 0 ? '' : 'bad')}">(${sign(dW)}pt wr)</span>`;
+    $('m_stdev').textContent = '±' + (r.scoreStdev || 0).toFixed(1) + ' pt';
+    // surprise (nats): search vs raw policy. ~0 calm, >0.5 notable, >1 sharp/tactical.
+    const su = r.surprise || 0;
+    $('m_surprise').innerHTML = su.toFixed(2) + ' ' +
+      (su > 1 ? '🔥 tactical' : su > 0.5 ? '· notable' : '<span class="muted">· calm</span>');
+    // decisiveness = how peaked the search-move distribution is. Map entropy (nats) to
+    // 0..1 where high entropy (many candidates) -> low decisiveness.
+    const dec = Math.max(0, Math.min(1, 1 - (r.searchEntropy || 0) / 2.0));
+    $('m_decis').innerHTML =
+      `<span style="display:inline-block;width:46px;height:7px;border-radius:3px;vertical-align:middle;` +
+      `background:linear-gradient(90deg,#3a9c5a ${Math.round(dec*100)}%,#2a2f38 ${Math.round(dec*100)}%);"></span> ` +
+      (dec > 0.66 ? 'one move' : dec > 0.33 ? 'a few' : 'many');
+  }
+  function renderCandidates(cand) {
+    const el = $('m_cand');
+    if (!cand || !cand.length) { el.innerHTML = '<span class="muted">play Search to rank moves</span>'; return; }
+    // Rank by LCB (how KataGo actually picks) but display best-first as given. The σ is
+    // the score stdev in points — the per-move uncertainty; smaller = surer.
+    el.innerHTML = cand.slice(0, 6).map((c, i) => {
+      const hue = hueForWr(c.wr);
+      const sig = (c.stdev != null && c.stdev > 0) ? ` · <span class="muted">±${c.stdev.toFixed(1)}</span>` : '';
+      return `<div style="display:flex; justify-content:space-between; gap:8px; padding:1px 0;">
+        <span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:hsl(${hue},62%,44%); margin-right:5px;"></span>${i + 1}. <b>${ptName(c.loc)}</b></span>
+        <span>${(c.wr * 100).toFixed(1)}% · ${(c.score >= 0 ? '+' : '') + c.score.toFixed(1)} · ${c.visits.toLocaleString()}v${sig}</span></div>`;
+    }).join('');
+  }
+  async function kataThink(opts) {
+    if (!ready) return null;
+    const noPonder = !!(opts && opts.noPonder);
+    try {
+      setBotState('searching…', 'run');
+      $('searchout').textContent = 'KataGo: starting engine…';
+      await ensureKataWorker();
+      const visits = Math.max(1, parseInt($('visits').value) || 400);
+      const ms = Math.max(100, parseInt($('ms').value) || 3000);
+      const threads = Math.max(1, parseInt($('threads').value) || 4);
+      $('searchout').textContent = 'KataGo thinking…';
+      const r = await kataCall({ type: 'search', moves: engineMoves().slice(0, MAXMV), toPlay, komi: komiVal(), visits, ms, threads, noPonder });
+      if (r.superseded) return null;   // a newer request took over and owns the panel now
+      lastSearch = r;                  // remember for training-data capture (self-play)
+      applySearchResult(r, threads);
+      setBotState(noPonder ? 'idle' : 'pondering…', noPonder ? '' : 'live');  // self-play: no between-move ponder
+      $('searchout').innerHTML = `KataGo: <b>${ptName(r.best)}</b> · ${(r.wr * 100).toFixed(1)}% · ${r.nv} visits · ${r.nps.toLocaleString()}/s · ${threads}t${r.reused ? ' · reused' : ''}`;
+      return r.best;
+    } catch (e) {
+      setBotState('error', 'run');
+      $('searchout').innerHTML = 'KataGo search failed: <span class="bad">' + (e.message || e) + '</span>';
+      return null;
+    }
+  }
+
+  // --- measure: search the position at growing visit budgets; show convergence ---
+  // The framework for "measuring the effect" of a search change (e.g. PUCT vs Gumbel):
+  // how few visits until the chosen move + win-rate settle to the deep-search answer.
+  // Tree reuse makes it cumulative, so each step just deepens the same tree.
+  async function measureSweep() {
+    if (!ready) return;
+    try {
+      setBotState('measuring…', 'run');
+      await ensureKataWorker();
+      const threads = Math.max(1, parseInt($('threads').value) || 4);
+      const budgets = [25, 50, 100, 200, 400, 800, 1600, 3200];
+      const rows = [];
+      for (const V of budgets) {
+        const r = await kataCall({ type: 'search', moves: engineMoves().slice(0, MAXMV), toPlay, komi: komiVal(), visits: V, ms: 120000, threads });
+        if (r.superseded) return;
+        rows.push({ v: r.nv, best: r.best, wr: r.wr, score: r.score });
+        const fb = r.best;
+        $('searchout').innerHTML = '<b>visit sweep</b> — move · win% · score:<br>' + rows.map(x =>
+          `${String(x.v).padStart(5)} → <b>${ptName(x.best)}</b> · ${(x.wr * 100).toFixed(1)}% · ${(x.score >= 0 ? '+' : '') + x.score.toFixed(1)}${x.best !== fb ? ' ·changed' : ''}`).join('<br>');
+        applySearchResult(r, threads);
+      }
+      const fb = rows[rows.length - 1].best;
+      let s = rows.length - 1; while (s > 0 && rows[s - 1].best === fb) s--;
+      setBotState('pondering…', 'live');
+      $('searchout').innerHTML += `<br><span class="muted">settled on ${ptName(fb)} by ~${rows[s].v} visits</span>`;
+    } catch (e) {
+      setBotState('error', 'run');
+      $('searchout').innerHTML = 'measure failed: <span class="bad">' + (e.message || e) + '</span>';
+    }
+  }
+
+  // --- self-play: the engine plays itself (search each move), then export SGF ---
+  let selfPlaying = false;
+  async function selfPlay() {
+    if (!ready) return;
+    if (selfPlaying) { selfPlaying = false; $('selfplay').textContent = 'Self-play ▶'; return; }  // toggle off
+    selfPlaying = true; $('selfplay').textContent = 'Stop ⏹';
+    trainRecord = [];                                // fresh game = fresh training record
+    let passes = 0; const cap = N * N * 2;  // safety cap; normally ends on two passes
+    while (selfPlaying && moves.length < cap) {
+      const mv = await kataThink({ noPonder: true });  // search the current position (no between-move ponder)
+      if (!selfPlaying || mv === null) break;        // stopped, or error/superseded
+      // capture the search as a training sample BEFORE playing: policy target = the visit
+      // distribution over candidate moves; value target = the searched win-rate/score.
+      if (lastSearch) trainRecord.push({
+        n: moves.length, toPlay, played: mv,
+        winrate: +lastSearch.wr.toFixed(4), score: +lastSearch.score.toFixed(2), visits: lastSearch.nv,
+        policy: (lastSearch.cand || []).map(c => ({ loc: c.loc, visits: c.visits })),
+      });
+      playMove(mv);                                  // play it (mv = loc, or -1 for pass)
+      passes = mv < 0 ? passes + 1 : 0;
+      $('gameinfo').textContent = `playing… ${moves.length} moves`;
+      if (passes >= 2) break;                        // both passed -> game over
+      await new Promise(r => setTimeout(r, 60));      // let the UI breathe
+    }
+    selfPlaying = false; $('selfplay').textContent = 'Self-play ▶';
+    $('gameinfo').textContent = `game: ${moves.length} moves${passes >= 2 ? ' · both passed (end)' : ''} · ${trainRecord.length} samples`;
+  }
+
+  // Training sidecar: positions + policy targets (visit distributions) + value targets,
+  // enough to convert to KataGo npz offline (recompute inputs from the move sequence).
+  function trainJSON() {
+    return JSON.stringify({
+      format: 'saigo-train-v1', net: netKey, size: N, komi: komiVal(),
+      handicap: hcMoves.length, handicapStones: hcMoves.map(m => m.loc),
+      finalScore: lastSearch ? +lastSearch.score.toFixed(2) : null,  // white lead estimate at end
+      moves: trainRecord,
+    });
+  }
+  function saveData() {
+    if (!trainRecord.length) { $('gameinfo').textContent = 'no self-play data yet — run self-play first'; return; }
+    const blob = new Blob([trainJSON()], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `saigo-${netKey}-${N}x${N}-${trainRecord.length}samples.json`;
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  // --- SGF review: load a game and step through it with full per-move analysis ---
+  let reviewLine = null, reviewSetup = 0;   // reviewSetup = # leading setup (handicap) stones
+  const sgfToLoc = (co) => (co.length === 2 && co !== 'tt') ? (co.charCodeAt(1) - 97) * N + (co.charCodeAt(0) - 97) : -1;
+  // Side to move after k stones of an explicit {loc,col} line — derived from the colors,
+  // so it's correct for handicap/setup (a leading same-color run) too, not just parity.
+  const sideToMoveAt = (line, k) => k < line.length ? line[k].col : (line.length ? (line[line.length - 1].col === 1 ? 2 : 1) : (hc > 0 ? 2 : 1));
+  function parseSGF(text) {
+    const g = { size: 19, setup: [], mv: [] };
+    const sz = text.match(/\bSZ\[(\d+)\]/); if (sz) g.size = +sz[1];
+    // Setup stones (handicap / problem placements): AB[..][..] = black, AW[..][..] = white.
+    // Without these, loading a real handicap SGF would desync from the engine's position.
+    for (const m of text.matchAll(/\b(AB|AW)((?:\s*\[[a-z]{2}\])+)/g)) {
+      const col = m[1] === 'AB' ? 1 : 2;
+      for (const c of m[2].matchAll(/\[([a-z]{2})\]/g)) g.setup.push({ col, co: c[1] });
+    }
+    g.setup.sort((a, b) => a.col - b.col);   // blacks first so the handicap run leads (engine detects it)
+    for (const m of text.matchAll(/;\s*([BW])\[([a-z]{0,2})\]/g)) g.mv.push({ col: m[1] === 'B' ? 1 : 2, co: m[2] });
+    return g;
+  }
+  function setReviewCursor(k) {
+    if (!reviewLine) return;
+    k = Math.max(reviewSetup, Math.min(reviewLine.length, k));   // never step "into" the setup stones
+    moves.length = 0; for (let i = 0; i < k; i++) moves.push(reviewLine[i]);
+    toPlay = sideToMoveAt(reviewLine, k);
+    $('reviewinfo').textContent = `move ${k - reviewSetup}/${reviewLine.length - reviewSetup}` + (reviewSetup ? ` (+${reviewSetup} handicap)` : '');
+    analyze();
+  }
+  function loadSGFText(text) {
+    const g = parseSGF(text);
+    if (g.size !== N) { $('reviewinfo').innerHTML = `<span class="bad">SGF is ${g.size}×${g.size} — reload at <a href="?net=${netKey}&size=${g.size}">size ${g.size}</a></span>`; return; }
+    const setup = g.setup.map(m => ({ loc: sgfToLoc(m.co), col: m.col })).filter(m => m.loc >= 0);
+    reviewSetup = setup.length;
+    reviewLine = setup.concat(g.mv.map(m => ({ loc: sgfToLoc(m.co), col: m.col })));   // setup stones lead
+    scanFlags = null; renderScanFlags();  // flags from a prior game no longer apply
+    setReviewCursor(reviewLine.length);   // jump to the final position; use ◀ ▶ to step
+  }
+  $('sgffile').onchange = (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const rd = new FileReader(); rd.onload = () => loadSGFText(rd.result); rd.readAsText(f);
+  };
+  $('rfirst').onclick = () => setReviewCursor(0);
+  $('rprev').onclick = () => setReviewCursor(moves.length - 1);
+  $('rnext').onclick = () => setReviewCursor(moves.length + 1);
+  $('rlast').onclick = () => reviewLine && setReviewCursor(reviewLine.length);
+
+  // --- auto-flag teaching moments: scan the whole game and flag mistakes + tricky spots,
+  // click to jump. The mistake signal is "points lost" (best move vs. the move played, at the
+  // SAME searched position — low variance, unlike differencing two noisy roots), measured in
+  // BOTH win-rate and score; when the played move isn't in the top candidates we fall back to
+  // the consecutive-position win-rate delta. Tricky = high policy surprise. Categories match
+  // the main app's OGS buckets (moveQuality.ts): inaccuracy / mistake / blunder. ---
+  const SCAN_VISITS = 200;   // per-position budget (tree-reused across positions, so cheap after the first)
+  // Win-rate-lost and score-lost (points) thresholds, worst wins. Win-rate buckets mirror
+  // web/frontend .../moveQuality.ts (blunder .10 / mistake .05 / inaccuracy .02).
+  const WR_BK = [[0.10, 'blunder'], [0.05, 'mistake'], [0.02, 'inaccuracy']];
+  const PT_BK = [[10, 'blunder'], [6, 'mistake'], [3, 'inaccuracy']];
+  const TRICKY_SURPRISE = 1.0;   // nats — search strongly disagreed with the raw policy
+  let scanFlags = null, scanning = false;
+  async function scanGame() {
+    if (scanning) { scanning = false; return; }                 // toggle-cancel
+    const isReview = !!reviewLine;
+    const full = isReview ? reviewLine.slice() : hcMoves.concat(moves);   // complete stone sequence
+    const lead = isReview ? reviewSetup : hcMoves.length;                 // skip leading handicap stones
+    if (full.length - lead < 1) { $('reviewinfo').textContent = 'load an SGF (or play a game) first'; return; }
+    scanning = true; $('rscan').textContent = 'Stop ⏹';
+    try {
+      await ensureKataWorker();
+      const threads = Math.max(1, parseInt($('threads').value) || 4);
+      setBotState('scanning…', 'run');
+      const L = full.length, wrAt = new Array(L + 1), info = new Array(L + 1);
+      // Positions are searched in forward order, each extending the last by one move, so the
+      // engine REUSES the tree across positions (confirmed: kgeSearchBegin makeMove-reuses a
+      // forward-extending line) — the scan is far cheaper than L independent searches.
+      for (let k = lead; k <= L && scanning; k++) {
+        const seq = full.slice(0, k).slice(0, MAXMV);
+        const tp = sideToMoveAt(full, k);
+        const r = await kataCall({ type: 'search', moves: seq, toPlay: tp, komi: komiVal(), visits: SCAN_VISITS, ms: 20000, threads, noPonder: true });
+        if (!r || r.superseded || !scanning) { setBotState('idle'); break; }
+        wrAt[k] = r.wr;                                   // side-to-move win-rate at this position
+        if (k < L) {                                      // decision point: the mover plays full[k]
+          const best = (r.cand && r.cand[0]) || null;
+          const played = r.cand ? r.cand.find(c => c.loc === full[k].loc) : null;
+          info[k] = { best, played, surprise: r.surprise || 0, mover: tp };
+        }
+        $('reviewinfo').textContent = `scanning ${k - lead}/${L - lead}…`;
+      }
+      if (!scanning) return;
+      scanFlags = [];
+      for (let k = lead; k < L; k++) {
+        const it = info[k]; if (!it || !it.best) continue;
+        let wrLost, ptsLost;
+        if (it.played) {                                 // same-node best-vs-played (low variance)
+          wrLost = it.best.wr - it.played.wr;
+          ptsLost = it.best.score - it.played.score;
+        } else if (wrAt[k] != null && wrAt[k + 1] != null) {   // played move off-candidates: consecutive fallback
+          wrLost = wrAt[k] - (1 - wrAt[k + 1]);          // mover's win-rate before minus after
+          ptsLost = 0;                                   // no reliable same-node score off-candidate
+        } else continue;
+        scanFlags.push({ k, mover: it.mover, lead, wrLost: Math.max(0, wrLost), ptsLost: Math.max(0, ptsLost), surprise: it.surprise });
+      }
+      renderScanFlags();
+      setBotState('idle');
+    } catch (e) {
+      setBotState('error', 'run'); $('reviewinfo').innerHTML = 'scan failed: <span class="bad">' + (e.message || e) + '</span>';
+    } finally { scanning = false; $('rscan').textContent = 'Scan 🔎'; }
+  }
+  const bucketFor = (wrLost, ptsLost) => {
+    for (const [t, name] of WR_BK) if (wrLost >= t) return name;
+    for (const [t, name] of PT_BK) if (ptsLost >= t) return name;
+    return null;
+  };
+  const KIND_RANK = { blunder: 3, mistake: 2, inaccuracy: 1, tricky: 0 };
+  const KIND_COLOR = { blunder: '#e05555', mistake: '#e0a020', inaccuracy: '#d8c24a', tricky: '#4aa3e0' };
+  function renderScanFlags() {
+    const el = $('scanflags'); if (!scanFlags) { el.innerHTML = ''; return; }
+    const nm = m => m === 1 ? 'B' : 'W';
+    const items = scanFlags.map(f => {
+      const kind = bucketFor(f.wrLost, f.ptsLost) || (f.surprise >= TRICKY_SURPRISE ? 'tricky' : null);
+      if (!kind) return null;
+      const weight = KIND_RANK[kind] * 100 + (kind === 'tricky' ? f.surprise : f.wrLost * 100 + f.ptsLost);
+      return { ...f, kind, weight };
+    }).filter(Boolean).sort((a, b) => b.weight - a.weight).slice(0, 14);
+    if (!items.length) { el.innerHTML = '<span class="muted">no notable mistakes or tricky spots — clean game</span>'; return; }
+    el.innerHTML = '<span class="muted">teaching moments (click to jump):</span><br>' + items.map(f => {
+      const mv = f.k - f.lead + 1;   // move number within the game (excluding handicap setup)
+      const label = f.kind === 'tricky'
+        ? `#${mv} ${nm(f.mover)} tricky · surprise ${f.surprise.toFixed(1)}`
+        : `#${mv} ${nm(f.mover)} ${f.kind} · −${(f.wrLost * 100).toFixed(0)}%${f.ptsLost >= 0.5 ? ` · −${f.ptsLost.toFixed(1)}pt` : ''}`;
+      return `<a href="#" data-k="${f.k}" style="color:${KIND_COLOR[f.kind]}; text-decoration:none; display:inline-block; margin:1px 8px 1px 0;">◆ ${label}</a>`;
+    }).join('');
+    el.querySelectorAll('a[data-k]').forEach(a => a.onclick = (ev) => { ev.preventDefault(); setReviewCursor(+a.dataset.k); });
+  }
+  $('rscan').onclick = scanGame;
+
+  // Standard SGF from the move list (coords a–s, row a = top, matching the board).
+  function gameSGF() {
+    const lt = i => 'abcdefghijklmnopqrs'[i];
+    const co = loc => lt(loc % N) + lt(Math.floor(loc / N));
+    let sgf = `(;GM[1]FF[4]CA[UTF-8]SZ[${N}]KM[${komiVal()}]RU[Tromp-Taylor]` +
+              `AP[saigo-katago-webgpu]PB[KataGo ${netKey}]PW[KataGo ${netKey}]`;
+    if (hcMoves.length) sgf += `HA[${hcMoves.length}]AB` + hcMoves.map(m => `[${co(m.loc)}]`).join('');  // handicap setup
+    for (const m of moves) sgf += `;${m.col === 1 ? 'B' : 'W'}[${m.loc < 0 ? '' : co(m.loc)}]`;  // pass = empty
+    return sgf + ')';
+  }
+  function saveSGF() {
+    if (!moves.length) { $('gameinfo').textContent = 'no moves to save yet'; return; }
+    const blob = new Blob([gameSGF()], { type: 'application/x-go-sgf' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `saigo-${netKey}-${moves.length}moves.sgf`;
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  // Redraw all stones from the displayed grid (captures appear/disappear).
+  function renderBoard() {
+    board.removeAllObjects();
+    placeStones(board);
+    // circle-mark the last move played (WGo 'CR' markup, auto-contrasting on the stone)
+    const last = moves.length ? moves[moves.length - 1] : null;
+    if (last && last.loc >= 0) board.addObject({ x: last.loc % N, y: Math.floor(last.loc / N), type: 'CR' });
+  }
+  // Append a move to the game sequence (loc = y*N+x, or -1 for pass) and re-eval.
+  function playMove(loc) {
+    if (!ready || moves.length >= MAXMV) return;
+    moves.push({ loc, col: toPlay });
+    toPlay = toPlay === 1 ? 2 : 1;
+    searchBest = -2;                 // new position — clear the searched marker
+    $('searchout').textContent = '';
+    analyze();
+  }
+
+  board.addEventListener('click', (x, y) => {
+    if (x < 0 || y < 0 || x >= N || y >= N || grid[x][y] !== 0) return;
+    playMove(idx(x, y));
+  });
+  $('thinkkata').onclick = kataThink;
+  $('measure').onclick = measureSweep;
+  $('selfplay').onclick = selfPlay;
+  $('savesgf').onclick = saveSGF;
+  $('savedata').onclick = saveData;
+  $('play').onclick = async () => {
+    if (!ready) return;
+    if ($('searchplay').checked) { const mv = await kataThink(); if (mv !== null) playMove(mv); }   // searched move (loc or -1)
+    else if (lastBest >= 0) playMove(lastBest === HW ? -1 : lastBest);                            // raw policy move
+  };
+  $('pass').onclick = () => playMove(-1);
+  $('undo').onclick = () => { if (ready && moves.length) { moves.pop(); toPlay = toPlay === 1 ? 2 : 1; analyze(); } };
+  $('clear').onclick = () => { if (ready) { moves.length = 0; toPlay = hc > 0 ? 2 : 1; analyze(); } };
+  $('komi').onchange = analyze;   // komi affects the eval (score + win-rate)
+  $('owner').onchange = analyze;
+  window.addEventListener('resize', () => { syncOverlay(); if (lastPolicy) drawOverlay(); });
+})();
+</script>
+</body>
+</html>
