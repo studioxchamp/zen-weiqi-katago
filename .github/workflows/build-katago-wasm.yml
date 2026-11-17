@@ -1,34 +1,43 @@
-name: Build Zen Weiqi KataGo WASM
+name: Build MeChampZ GO KataGo WASM
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
 
 jobs:
   build-browser-engine:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
-      - name: Checkout repository
+      - name: Checkout package
         uses: actions/checkout@v4
 
-      - name: Install Eigen3 and build tools
+      - name: Install native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libeigen3-dev zip
+          sudo apt-get install -y build-essential cmake python3 libeigen3-dev
 
-      - name: Setup Emscripten SDK
-        uses: mymindstorm/setup-emsdk@v14
-        with:
-          version: latest
+      - name: Install Emscripten SDK
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git "$HOME/emsdk"
+          "$HOME/emsdk/emsdk" install latest
+          "$HOME/emsdk/emsdk" activate latest
+          source "$HOME/emsdk/emsdk_env.sh"
+          emcc --version
 
       - name: Build threaded KataGo and copy browser assets
         run: |
-          chmod +x build-katago.sh engine-src/scripts/build-eval.sh
+          source "$HOME/emsdk/emsdk_env.sh"
           bash build-katago.sh
 
       - name: Upload Netlify publish folder
         uses: actions/upload-artifact@v4
         with:
-          name: netlify-site-ready
+          name: mechampz-go-katago-site
           path: site/
+          if-no-files-found: error
+          retention-days: 14

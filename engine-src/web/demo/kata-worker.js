@@ -207,6 +207,10 @@ async function handleMessage(e) {
         [e.data.visits | 0, e.data.temp || 0, e.data.policyTemp || 1]);
       postMessage({ id, ok: true });
     }
+    else if (type === 'cancel') {
+      M.ccall('kgeStopSearch', 'number', [], []);
+      postMessage({ id, ok: true });
+    }
     else throw new Error('unknown message type: ' + type);
   } catch (err) {
     postMessage({ id, ok: false, error: String((err && err.message) || err) });
@@ -226,6 +230,6 @@ onmessage = (e) => {
   // its chain link immediately — the queued handler then runs without waiting out the full
   // search budget. Soundness (one async ccall at a time) still comes from the chain below.
   const t = e.data.type;
-  if (t === 'eval' || t === 'search') pollToken++;
+  if (t === 'eval' || t === 'search' || t === 'cancel') pollToken++;
   engineChain = engineChain.then(() => handleMessage(e));
 };
