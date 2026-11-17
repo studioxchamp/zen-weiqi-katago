@@ -20,7 +20,7 @@ echo "==> Copying browser engine and model into Netlify site"
 cp web/demo/kataeval-mt.js "$SITE_KATAGO/"
 cp web/demo/kataeval-mt.wasm "$SITE_KATAGO/"
 cp web/demo/kata-worker.js "$SITE_KATAGO/"
-cp web/demo/model-b10c128.bin.gz "$SITE_KATAGO/"
+cp web/demo/model-b10c128.bin.gz "$SITE_KATAGO/" 2>/dev/null || true
 
 echo "==> Done. Deploy the CONTENTS of site/ to Netlify."
-ls -lh "$SITE_KATAGO"/kataeval-mt.* "$SITE_KATAGO"/model-b10c128.bin.gz
+ls -lh "$SITE_KATAGO"/
