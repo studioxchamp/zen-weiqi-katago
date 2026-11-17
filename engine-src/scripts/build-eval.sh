@@ -3,7 +3,7 @@
 #
 # kataeval is the one clean dependency (cpp/kataeval/): a C ABI (kataeval.h) over
 # the minimal KataGo subset listed in cpp/kataeval/sources.txt. This script
-# compiles that exact set + the WebGPU backend to WASM via emcc/emdawnwebgpu.
+# compiles that exact set + the WebGPU backend to WASM via em++/emdawnwebgpu.
 #
 # Mixed C++ standard: webgpubackend.cpp needs C++20 (webgpu_cpp.h), but KataGo's
 # fileutils.cpp breaks under C++20 — so compile per-file, then link.
@@ -53,7 +53,7 @@ for f in "${SRCS[@]}"; do
     extra=( -DUSE_EIGEN_BACKEND -isystem /usr/include/eigen3 )   # includes eigenbackend.cpp
   fi
   o="$OBJ/$(echo "$f" | tr '/.' '__').o"
-  emcc -c "$f" -std=$std "${CFLAGS[@]}" "${extra[@]}" -o "$o"
+  em++ -c "$f" -std=$std "${CFLAGS[@]}" "${extra[@]}" -o "$o"
   OBJS+=("$o")
 done
 
@@ -64,7 +64,7 @@ ASSERT=( )
 if [ "${ASSERTIONS:-0}" = 1 ]; then ASSERT=( -sASSERTIONS=2 ); echo "==> ASSERTIONS on"; fi
 
 echo "==> linking -> web/demo/$OUTNAME.js"
-emcc "${OBJS[@]}" --use-port=emdawnwebgpu -sUSE_ZLIB=1 \
+em++ "${OBJS[@]}" --use-port=emdawnwebgpu -sUSE_ZLIB=1 \
   -fexceptions \
   -sASYNCIFY -sALLOW_MEMORY_GROWTH=1 -sFORCE_FILESYSTEM=1 \
   -sSTACK_SIZE=16MB "${LINKEXTRA[@]}" "${ASSERT[@]}" \
