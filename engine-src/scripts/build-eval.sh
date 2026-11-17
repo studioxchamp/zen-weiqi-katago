@@ -77,7 +77,17 @@ echo "==> built:"; ls -la "$ROOT/web/demo/$OUTNAME.js" "$ROOT/web/demo/$OUTNAME.
 
 # Bundle the demo nets (web/demo/model-*.bin.gz are gitignored, so regenerate here for an
 # out-of-the-box demo). The analyze.html net selector picks among them via ?net=.
-bundle() { [ -f "$1" ] && { cp "$1" "$ROOT/web/demo/$2"; echo "==> bundled $(basename "$1") -> web/demo/$2"; }; }
+bundle() {
+  local source="${1:-}"
+  local target="${2:-}"
+  if [ -n "$source" ] && [ -f "$source" ]; then
+    cp "$source" "$ROOT/web/demo/$target"
+    echo "==> bundled $(basename "$source") -> web/demo/$target"
+  else
+    echo "==> optional model not present, skipping: ${target:-unknown}"
+  fi
+  return 0
+}
 # DEFAULT net: b5c192nbtv17q — our v17 nested-bottleneck+q net (tiny like b6, but beats
 # g170-b6 ~81% on raw policy / ~56% at 100v MCTS). Training is ongoing, so default to the
 # NEWEST exported checkpoint (auto-picks as new ones land); override with $B5_NET.
