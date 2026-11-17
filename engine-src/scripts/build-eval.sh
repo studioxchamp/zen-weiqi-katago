@@ -64,7 +64,7 @@ ASSERT=( )
 if [ "${ASSERTIONS:-0}" = 1 ]; then ASSERT=( -sASSERTIONS=2 ); echo "==> ASSERTIONS on"; fi
 
 echo "==> linking -> web/demo/$OUTNAME.js"
-emcc "${OBJS[@]}" --use-port=emdawnwebgpu -sUSE_ZLIB=1 \
+em++ "${OBJS[@]}" --use-port=emdawnwebgpu -sUSE_ZLIB=1 \
   -fexceptions \
   -sASYNCIFY -sALLOW_MEMORY_GROWTH=1 -sFORCE_FILESYSTEM=1 \
   -sSTACK_SIZE=16MB "${LINKEXTRA[@]}" "${ASSERT[@]}" \
