@@ -41,7 +41,20 @@ async function init(netFile, boardSize, wasmBinary, jsText, forceCpu, fp16, opti
   // Spawn pthread workers from a blob: URL (built from the page-fetched JS text), not
   // the https URL — a nested new Worker(https-url) fails over a self-signed/overridden
   // cert. The blob is same-origin and in-memory, so no cert is involved.
-  const moduleBlob = new Blob([jsText], { type: 'text/javascript' });
+  // Emscripten's generated pthread bootstrap in this build uses _scriptName
+  // directly when it creates pthread workers. Because kataeval-mt.js is loaded
+  // with importScripts() from this wrapper, _scriptName points to kata-worker.js
+  // and would recursively start this wrapper instead of the Emscripten module.
+  // Patch that one generated assignment so pthread workers run the module Blob.
+  const pthreadBootstrapPatch = /var pthreadMainJs\s*=\s*_scriptName\s*;/;
+  if (!pthreadBootstrapPatch.test(jsText)) {
+    throw new Error('Unsupported kataeval-mt.js: Emscripten pthread bootstrap pattern not found');
+  }
+  const patchedJsText = jsText.replace(
+    pthreadBootstrapPatch,
+    'var pthreadMainJs=Module["mainScriptUrlOrBlob"]||_scriptName;'
+  );
+  const moduleBlob = new Blob([patchedJsText], { type: 'text/javascript' });
   diag('createKata: spawning thread pool…');
   M = await createKata({
     // The page fetched the wasm for us (a worker's fetch() also fails over the cert);
