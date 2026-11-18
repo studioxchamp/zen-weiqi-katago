@@ -2752,9 +2752,8 @@
         this.fallbackNoticeShown = false;
         this.netFile = 'model-b10c128.bin.gz';
         this.engineBase = 'katago/';
-        this.assetVersion = '20261119-v2';
-        const urlParams = new URLSearchParams(window.location.search);
-        this.forceCpu = urlParams.has('cpu') ? true : !urlParams.has('webgpu');
+        this.assetVersion = '20261119-v3';
+        this.forceCpu = new URLSearchParams(window.location.search).has('cpu');
         this.retriedWithCpu = false;
         this.profiles = {
           '8k': { cap: 12,   visits: 24,   ms: 900,  temp: 0.90, policyTemp: 1.60 },
