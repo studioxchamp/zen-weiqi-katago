@@ -609,7 +609,7 @@ static bool ensureKataEngine() {
   gNNEval = new NNEvaluator(
     "kge", gModelPath, "", &kgeLogger(),
     KGE_MAX_BATCH, gXLen, gYLen,
-    /*requireExactNNLen*/true, /*inputsUseNHWC*/false,  // WebGPU = NCHW
+    /*requireExactNNLen*/true, /*inputsUseNHWC*/!kgeBackendIsGpu(),  // Eigen CPU = NHWC; WebGPU = NCHW
     /*nnCacheSizePowerOfTwo*/16, /*nnMutexPoolSizePowerofTwo*/14,  // 64K entries: plenty
     // for browser searches (a few k visits), vs the desktop 1M that could reach GBs of
     // cached NNOutputs (ownership+policy) on big nets — a prime cause of the fragile
