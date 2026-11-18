@@ -35,12 +35,20 @@ await new Promise((ok) => server.listen(0, '127.0.0.1', ok));
 const address = server.address();
 const origin = `http://127.0.0.1:${address.port}`;
 const browser = await chromium.launch({ headless: true, args: ['--disable-dev-shm-usage'] });
+const cdp = await browser.newBrowserCDPSession();
+const workerTargets = [];
+cdp.on('Target.targetCreated', ({ targetInfo }) => {
+  if (targetInfo.type === 'worker') workerTargets.push({ url: targetInfo.url, title: targetInfo.title });
+});
+await cdp.send('Target.setDiscoverTargets', { discover: true });
 const results = { startedAt: new Date().toISOString(), checks: {}, errors: [] };
 
 try {
   const enginePage = await browser.newPage();
   enginePage.on('pageerror', (e) => results.errors.push(`worker test pageerror: ${e.message}`));
   await enginePage.goto(origin, { waitUntil: 'domcontentloaded' });
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  const workerBaseline = workerTargets.length;
   const workerResult = await enginePage.evaluate(async () => {
     if (!crossOriginIsolated || typeof SharedArrayBuffer !== 'function') throw new Error('COOP/COEP isolation unavailable');
     const model = await fetch('/katago/model-b10c128.bin.gz', { method: 'HEAD' });
@@ -49,7 +57,6 @@ try {
     if (!wasmResponse.ok || !jsResponse.ok) throw new Error(`engine assets HTTP ${wasmResponse.status}/${jsResponse.status}`);
     const wasmBinary = await wasmResponse.arrayBuffer();
     const jsText = await jsResponse.text();
-    if (!jsText.includes('mainScriptUrlOrBlob')) throw new Error('generated JS does not expose mainScriptUrlOrBlob');
     const worker = new Worker('/katago/kata-worker.js');
     const diagnostics = [];
     const pending = new Map();
@@ -89,9 +96,26 @@ try {
       const cancelledSearch = send(5, { type: 'cancel' });
       const [searchEnd, cancelAck] = await Promise.all([longSearch, cancelledSearch]);
       if (!searchEnd.superseded || !cancelAck.ok) throw new Error('cancel did not supersede the active search');
-      return { backend: init.backend, modelVersion: init.version, modelHttpStatus: model.status, wasmBytes: wasmBinary.byteLength, diagnostics, evalPolicyLength: evaluated.policy.length, evalValue: Array.from(evaluated.value), best: searched.best, visits: searched.nv, cancelSuperseded: searchEnd.superseded };
-    } finally { worker.terminate(); }
+      worker.terminate();
+      return { backend: init.backend, modelVersion: init.version, modelHttpStatus: model.status, wasmBytes: wasmBinary.byteLength, diagnostics, threadPoolReady: true, evalPolicyLength: evaluated.policy.length, evalValue: Array.from(evaluated.value), best: searched.best, visits: searched.nv, cancelSuperseded: searchEnd.superseded };
+    } catch (error) {
+      worker.terminate();
+      throw error;
+    }
   });
+  const workerWaitDeadline = Date.now() + 10000;
+  while (workerTargets.length < workerBaseline + 10 && Date.now() < workerWaitDeadline)
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  const spawnedTargets = workerTargets.slice(workerBaseline);
+  const outerWorker = spawnedTargets.find((target) => target.url.endsWith('/katago/kata-worker.js'));
+  const pthreadTargets = spawnedTargets.filter((target) => target !== outerWorker);
+  if (!outerWorker) throw new Error(`main KataGo worker target not observed; targets: ${JSON.stringify(spawnedTargets)}`);
+  if (pthreadTargets.length < 9) throw new Error(`expected 9 Emscripten pthread workers; observed ${pthreadTargets.length}: ${JSON.stringify(spawnedTargets)}`);
+  const wrongBootstrap = pthreadTargets.filter((target) => target.url.endsWith('/katago/kata-worker.js'));
+  if (wrongBootstrap.length) throw new Error(`pthread workers reloaded kata-worker.js instead of the Emscripten module: ${JSON.stringify(wrongBootstrap)}`);
+  const unknownBootstrap = pthreadTargets.filter((target) => !target.url.startsWith('blob:') && !target.url.endsWith('/katago/kataeval-mt.js'));
+  if (unknownBootstrap.length) throw new Error(`pthread workers used an unexpected bootstrap URL: ${JSON.stringify(unknownBootstrap)}`);
+  workerResult.threadWorkers = pthreadTargets.map((target) => target.url);
   results.checks.engineWorker = workerResult;
   await enginePage.close();
 
@@ -130,6 +154,7 @@ try {
   console.error(JSON.stringify(results, null, 2));
   process.exitCode = 1;
 } finally {
+  await cdp.detach();
   await browser.close();
   await new Promise((ok) => server.close(ok));
 }

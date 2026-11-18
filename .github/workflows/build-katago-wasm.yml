@@ -30,6 +30,21 @@ jobs:
           "$HOME/emsdk/emsdk" activate latest
           source "$HOME/emsdk/emsdk_env.sh"
           emcc --version
+          mkdir -p .validation
+          {
+            echo '=== Emscripten SDK git revision ==='
+            git -C "$HOME/emsdk" rev-parse HEAD
+            echo '=== Compiler version ==='
+            emcc --version
+            echo '=== Build command and effective pthread flags ==='
+            echo 'MT=1 KATA_PTHREAD_POOL_SIZE=9 bash scripts/build-eval.sh'
+            echo 'Compile: -pthread -DKGE_THREADS'
+            echo 'Link: -pthread -sPTHREAD_POOL_SIZE=9 -sINITIAL_MEMORY=512MB -sASYNCIFY -sALLOW_MEMORY_GROWTH=1 -sMODULARIZE=1 -sEXPORT_NAME=createKata'
+            echo '=== Exact build-eval.sh flags and exports ==='
+            sed -n '1,100p' engine-src/scripts/build-eval.sh
+            echo '=== Browser module initialization ==='
+            grep -nE 'mainScriptUrlOrBlob|wasmBinary|createKata|new Blob' site/katago/kata-worker.js
+          } | tee .validation/build-info.txt
 
       - name: Build threaded KataGo and copy browser assets
         run: |
@@ -46,7 +61,7 @@ jobs:
           test -s site/katago/kataeval-mt.js
           test -s site/katago/kataeval-mt.wasm
           test -s site/katago/model-b10c128.bin.gz
-          node --input-type=module -e "import {readFileSync} from 'node:fs'; const js=readFileSync('site/katago/kataeval-mt.js','utf8'); for (const s of ['mainScriptUrlOrBlob','PThread','pthread']) if (!js.includes(s)) throw new Error('threaded JS missing '+s); const w=readFileSync('site/katago/kataeval-mt.wasm'); if (w[0]!==0||w[1]!==97||w[2]!==115||w[3]!==109) throw new Error('invalid WASM magic'); console.log('PASS threaded JS markers and WASM magic');"
+          node --input-type=module -e "import {readFileSync,statSync} from 'node:fs'; const p='site/katago/kataeval-mt.wasm'; const w=readFileSync(p); if (w[0]!==0||w[1]!==97||w[2]!==115||w[3]!==109) throw new Error('invalid WASM magic'); await WebAssembly.compile(w); console.log('PASS compiled threaded WASM:',statSync(p).size,'bytes');"
           node engine-src/web/test-search-mt.mjs
 
       - name: Install Chromium test runner
@@ -56,6 +71,18 @@ jobs:
 
       - name: Test model, eval, search, cancel, and game move in Chromium
         run: node engine-src/web/test-browser-mt.mjs
+
+      - name: Upload generated build diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: katago-failed-build-diagnostics
+          path: |
+            .validation/build-info.txt
+            site/katago/kataeval-mt.js
+            site/katago/kataeval-mt.wasm
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Upload tested Netlify publish folder
         uses: actions/upload-artifact@v4
@@ -70,6 +97,8 @@ jobs:
         if: always()
         with:
           name: zen-weiqi-katago-validation-report
-          path: .validation/kata-mt-browser.json
+          path: |
+            .validation/kata-mt-browser.json
+            .validation/build-info.txt
           if-no-files-found: ignore
           retention-days: 14
