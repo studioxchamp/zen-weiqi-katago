@@ -2752,6 +2752,10 @@
         this.fallbackNoticeShown = false;
         this.netFile = 'model-b10c128.bin.gz';
         this.engineBase = 'katago/';
+        this.assetVersion = '20261119-v2';
+        const urlParams = new URLSearchParams(window.location.search);
+        this.forceCpu = urlParams.has('cpu') ? true : !urlParams.has('webgpu');
+        this.retriedWithCpu = false;
         this.profiles = {
           '8k': { cap: 12,   visits: 24,   ms: 900,  temp: 0.90, policyTemp: 1.60 },
           '7k': { cap: 24,   visits: 40,   ms: 1100, temp: 0.82, policyTemp: 1.52 },
@@ -2785,12 +2789,14 @@
 
       createWorker() {
         if (this.worker) return;
-        this.worker = new Worker(this.engineBase + 'kata-worker.js');
-        this.worker.onmessage = (event) => {
+        const worker = new Worker(`${this.engineBase}kata-worker.js?v=${this.assetVersion}`);
+        this.worker = worker;
+        worker.onmessage = (event) => {
+          if (this.worker !== worker) return;
           const data = event.data || {};
           if (data.diag) {
             console.info(`[KataGo worker${data.requestId == null ? '' : ` request ${data.requestId}`}] ${data.diag}`);
-            this.setStatus('เตรียม Engine…');
+            if (!this.ready) this.setStatus('เตรียม Engine…');
             return;
           }
           if (data.progress) {
@@ -2803,11 +2809,13 @@
           if (data.ok) pending.resolve(data);
           else pending.reject(new Error(data.error || 'KataGo engine error'));
         };
-        this.worker.onerror = (event) => {
+        worker.onerror = (event) => {
+          if (this.worker !== worker) return;
+          event.preventDefault?.();
           const error = new Error(event.message || 'KataGo worker crashed');
           for (const pending of this.pending.values()) pending.reject(error);
           this.pending.clear();
-          try { this.worker.terminate(); } catch (_) {}
+          try { worker.terminate(); } catch (_) {}
           this.worker = null;
           this.ready = false;
           this.initPromise = null;
@@ -2825,8 +2833,8 @@
           this.initPromise = (async () => {
             this.setStatus('กำลังโหลด KataGo…');
             const [wasmResponse, jsResponse] = await Promise.all([
-              fetch(this.engineBase + 'kataeval-mt.wasm'),
-              fetch(this.engineBase + 'kataeval-mt.js')
+              fetch(`${this.engineBase}kataeval-mt.wasm?v=${this.assetVersion}`),
+              fetch(`${this.engineBase}kataeval-mt.js?v=${this.assetVersion}`)
             ]);
             if (!wasmResponse.ok || !jsResponse.ok) {
               throw new Error('ไม่พบไฟล์ KataGo WASM ที่ Build แล้ว');
@@ -2835,7 +2843,7 @@
               wasmResponse.arrayBuffer(),
               jsResponse.text()
             ]);
-            const modelResponse = await fetch(this.engineBase + this.netFile, { method: 'HEAD' });
+            const modelResponse = await fetch(`${this.engineBase}${this.netFile}`, { method: 'HEAD' });
             if (!modelResponse.ok) throw new Error('ไม่พบไฟล์โมเดล KataGo');
             const info = await this.call({
               type: 'init',
@@ -2843,7 +2851,7 @@
               boardSize: BOARD_SIZE,
               wasmBinary,
               jsText,
-              forceCpu: false,
+              forceCpu: this.forceCpu,
               fp16: false,
               optimism: 0
             }, [wasmBinary]);
@@ -2920,6 +2928,16 @@
           return result.best;
         } catch (error) {
           if (generation !== this.generation) return { cancelled: true };
+          if (!this.forceCpu && !this.retriedWithCpu) {
+            this.retriedWithCpu = true;
+            this.forceCpu = true;
+            console.warn('[KataGo] WebGPU failed, retrying with Eigen CPU backend:', error);
+            try { this.worker?.terminate(); } catch (_) {}
+            this.worker = null;
+            this.ready = false;
+            this.initPromise = null;
+            return await this.requestMove(params);
+          }
           this.setStatus('KataGo ไม่พร้อม · ใช้ AI สำรอง');
           if (!this.fallbackNoticeShown) {
             this.fallbackNoticeShown = true;
@@ -3421,6 +3439,8 @@
       // If AI plays Black (or White after Handicap) and it's AI's turn immediately
       if (state.mode === 'ai' && state.currentTurn === state.aiColor && !state.gameOver) {
         triggerAiTurn(false);
+      } else if (state.mode === 'ai' && !state.gameOver) {
+        aiController.ensureReady().catch(() => {});
       }
     }
 
