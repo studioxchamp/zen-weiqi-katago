@@ -1122,7 +1122,7 @@ void NeuralNet::getOutput(
     auto it = cache.find(key);
     if(it != cache.end()) return it->second;
     std::vector<float> U = winogradFilterTransform(cd.weights, outC, inC);
-    wgpu::Buffer b = wgMakeStorage(ctx, U.data(), U.size(), false);
+    wgpu::Buffer b = wgMakeStorage(ctx, U.data(), U.size(), false, /*pooled=*/false);
     cache.emplace(key, b);
     return b;
   };

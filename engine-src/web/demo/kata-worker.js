@@ -5,7 +5,7 @@
 // caller until the search finishes. Blocking is forbidden on the page's main thread
 // (Atomics.wait throws there) but fine on a worker — so the engine lives here and the
 // UI thread stays responsive. Requires cross-origin isolation (COOP/COEP) for threads.
-importScripts('kataeval-mt.js');
+importScripts('kataeval-mt.js' + (self.location.search || ''));
 
 // Surface errors that would otherwise be swallowed (pthread pool spawn, rejections).
 const diag = (m, requestId) => { try { postMessage({ diag: m, requestId }); } catch (_) {} };
@@ -24,9 +24,9 @@ function installPthreadBootstrap(jsText, requestId) {
   const NativeWorker = globalThis.Worker;
   globalThis.Worker = new Proxy(NativeWorker, {
     construct(target, args) {
-      let requestedUrl = '';
-      try { requestedUrl = new URL(args[0], self.location.href).href; } catch (_) {}
-      if (requestedUrl === self.location.href) {
+      let requestedUrl = null;
+      try { requestedUrl = new URL(args[0], self.location.href); } catch (_) {}
+      if (requestedUrl && requestedUrl.origin === self.location.origin && requestedUrl.pathname === self.location.pathname) {
         args[0] = pthreadBootstrapUrl;
         diag('pthread: redirected Emscripten worker bootstrap to kataeval-mt.js blob', requestId);
       }

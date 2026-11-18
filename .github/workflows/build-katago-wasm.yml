@@ -8,7 +8,7 @@ on:
     branches: [ main, master ]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-browser-engine:
@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout package
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
 
       - name: Install native build dependencies
         run: |
@@ -71,6 +73,19 @@ jobs:
 
       - name: Test model, eval, search, cancel, and game move in Chromium
         run: node engine-src/web/test-browser-mt.mjs
+
+      - name: Commit tested browser assets to branch
+        run: |
+          TARGET_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          if [ -n "$TARGET_BRANCH" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -f site/katago/kataeval-mt.js site/katago/kataeval-mt.wasm site/katago/kata-worker.js
+            if ! git diff --cached --quiet; then
+              git commit -m "Update tested KataGo WASM browser assets [skip ci]"
+              git push origin "HEAD:refs/heads/$TARGET_BRANCH"
+            fi
+          fi
 
       - name: Upload generated build diagnostics on failure
         if: failure()

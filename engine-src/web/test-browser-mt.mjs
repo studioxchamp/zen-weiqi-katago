@@ -101,7 +101,7 @@ try {
       pending.set(id, { resolve, reject, timer }); worker.postMessage({ id, ...msg }, transfer);
     });
     try {
-      const init = await send(1, { type: 'init', netFile: 'model-b10c128.bin.gz', boardSize: 19, wasmBinary, jsText, forceCpu: true, fp16: false, optimism: 0 }, [wasmBinary]);
+      const init = await send(1, { type: 'init', netFile: 'model-b10c128.bin.gz', boardSize: 19, wasmBinary, jsText, forceCpu: false, fp16: false, optimism: 0 }, [wasmBinary]);
       if (init.id !== 1) throw new Error(`init response ID mismatch: expected 1, received ${init.id}`);
       const initDiags = diagnostics.filter((d) => d.requestId === 1).map((d) => d.message);
       for (const stage of ['init: Emscripten runtime and pthread pool ready', 'model: ', 'kgeLoad: complete;']) {
@@ -125,11 +125,14 @@ try {
       const [searchEnd, cancelAck] = await Promise.all([longSearch, cancelledSearch]);
       if (searchEnd.id !== 4 || cancelAck.id !== 5) throw new Error(`search/cancel response ID mismatch: ${searchEnd.id}/${cancelAck.id}`);
       if (!searchEnd.superseded || !cancelAck.ok) throw new Error('cancel did not supersede the active search');
+      const searchedAfterCancel = await send(6, { type: 'search', moves: [{ loc: 9 * 19 + 9, col: 1 }], toPlay: 2, komi: 6.5, visits: 24, ms: 1500, threads: 2, noPonder: true });
+      if (searchedAfterCancel.id !== 6) throw new Error(`post-cancel search response ID mismatch: expected 6, received ${searchedAfterCancel.id}`);
+      if (!Number.isInteger(searchedAfterCancel.best) || searchedAfterCancel.best < -1 || searchedAfterCancel.best >= 361 || searchedAfterCancel.nv < 1) throw new Error('post-cancel search did not return a legal board point/pass');
       worker.terminate();
       const evalDiags = diagnostics.filter((d) => d.requestId === 2).map((d) => d.message);
       if (!evalDiags.some((d) => d.includes('eval: kgeEvalSeqKata complete'))) throw new Error(`eval response arrived without completion diagnostic: ${JSON.stringify(evalDiags)}`);
       if (unmatchedResponses.length) throw new Error(`worker sent response IDs with no matching request: ${JSON.stringify(unmatchedResponses)}`);
-      return { backend: init.backend, modelVersion: init.version, modelHttpStatus: model.status, wasmBytes: wasmBinary.byteLength, diagnostics, threadPoolReady: true, responseIds: [init.id, evaluated.id, searched.id, searchEnd.id, cancelAck.id], evalPolicyLength: evaluated.policy.length, evalValue: Array.from(evaluated.value), best: searched.best, visits: searched.nv, cancelSuperseded: searchEnd.superseded };
+      return { backend: init.backend, modelVersion: init.version, modelHttpStatus: model.status, wasmBytes: wasmBinary.byteLength, diagnostics, threadPoolReady: true, responseIds: [init.id, evaluated.id, searched.id, searchEnd.id, cancelAck.id, searchedAfterCancel.id], evalPolicyLength: evaluated.policy.length, evalValue: Array.from(evaluated.value), best: searched.best, visits: searched.nv, cancelSuperseded: searchEnd.superseded, postCancelBest: searchedAfterCancel.best, postCancelVisits: searchedAfterCancel.nv };
     } catch (error) {
       worker.terminate();
       throw error;
@@ -146,7 +149,7 @@ try {
   // worker target count (1 outer worker + 9 prewarmed pthread workers) instead of
   // failing on unavailable metadata. When URLs are exposed, retain strict checks.
   const targetsWithUrls = spawnedTargets.filter((target) => target.url);
-  const outerWorker = targetsWithUrls.find((target) => target.url.endsWith('/katago/kata-worker.js'));
+  const outerWorker = targetsWithUrls.find((target) => target.url.includes('/katago/kata-worker.js'));
   if (spawnedTargets.length < 10) {
     throw new Error(`expected at least 10 worker targets (outer worker + 9 Emscripten pthread workers); observed ${spawnedTargets.length}: ${JSON.stringify(spawnedTargets)}`);
   }
@@ -154,9 +157,9 @@ try {
     if (!outerWorker) throw new Error(`main KataGo worker target URL not observed among URL-bearing targets: ${JSON.stringify(targetsWithUrls)}`);
     const pthreadTargets = targetsWithUrls.filter((target) => target !== outerWorker);
     if (pthreadTargets.length < 9) throw new Error(`expected 9 URL-bearing Emscripten pthread workers; observed ${pthreadTargets.length}: ${JSON.stringify(targetsWithUrls)}`);
-    const wrongBootstrap = pthreadTargets.filter((target) => target.url.endsWith('/katago/kata-worker.js'));
+    const wrongBootstrap = pthreadTargets.filter((target) => target.url.includes('/katago/kata-worker.js'));
     if (wrongBootstrap.length) throw new Error(`pthread workers reloaded kata-worker.js instead of the Emscripten module: ${JSON.stringify(wrongBootstrap)}`);
-    const unknownBootstrap = pthreadTargets.filter((target) => !target.url.startsWith('blob:') && !target.url.endsWith('/katago/kataeval-mt.js'));
+    const unknownBootstrap = pthreadTargets.filter((target) => !target.url.startsWith('blob:') && !target.url.includes('/katago/kataeval-mt.js'));
     if (unknownBootstrap.length) throw new Error(`pthread workers used an unexpected bootstrap URL: ${JSON.stringify(unknownBootstrap)}`);
     workerResult.threadWorkers = pthreadTargets.map((target) => target.url);
   } else {
