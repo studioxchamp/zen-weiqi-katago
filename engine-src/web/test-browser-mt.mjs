@@ -101,7 +101,7 @@ try {
       pending.set(id, { resolve, reject, timer }); worker.postMessage({ id, ...msg }, transfer);
     });
     try {
-      const init = await send(1, { type: 'init', netFile: 'model-b10c128.bin.gz', boardSize: 19, wasmBinary, jsText, forceCpu: true, fp16: false, optimism: 0 }, [wasmBinary]);
+      const init = await send(1, { type: 'init', netFile: 'model-b10c128.bin.gz', boardSize: 19, wasmBinary, jsText, forceCpu: false, fp16: false, optimism: 0 }, [wasmBinary]);
       if (init.id !== 1) throw new Error(`init response ID mismatch: expected 1, received ${init.id}`);
       const initDiags = diagnostics.filter((d) => d.requestId === 1).map((d) => d.message);
       for (const stage of ['init: Emscripten runtime and pthread pool ready', 'model: ', 'kgeLoad: complete;']) {
