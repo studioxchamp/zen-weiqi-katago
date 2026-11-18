@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>หมากล้อม 19x19 — MeChampZ GO Online</title>
+  <title>หมากล้อม 19x19 — Zen Weiqi Online</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" crossorigin="anonymous"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Noto+Serif+Thai:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Noto+Serif+Thai:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous" />
   <style>
     :root {
       --bg-deep: #181410;
@@ -37,11 +37,6 @@
 
     .font-serif-thai {
       font-family: 'Noto Serif Thai', serif;
-    }
-
-    input, textarea {
-      -webkit-user-select: text;
-      user-select: text;
     }
 
     .font-clock {
@@ -160,10 +155,10 @@
         <div class="min-w-0">
           <h1 class="font-serif-thai text-base sm:text-xl font-bold tracking-wide text-amber-100 leading-tight truncate">
             <span class="sm:hidden">หมากล้อม 19×19</span>
-            <span class="hidden sm:inline">หมากล้อม 19x19 — MeChampZ GO Online</span>
+            <span class="hidden sm:inline">หมากล้อม 19×19 — Zen Weiqi Online</span>
           </h1>
           <p class="text-[11px] sm:text-xs text-amber-200/60 hidden sm:block">
-            กระดานไม้คายะ • นาฬิกา 30 นาที/คน • เซฟ/โหลดเกม • ออนไลน์ 2 คน & KataGo AI
+            กระดานไม้คายะ • นาฬิกา 30 นาที/คน • เซฟ/โหลดเกม • ออนไลน์ 2 คน & AI (8 คิว – 3 ดั้ง)
           </p>
         </div>
       </div>
@@ -253,22 +248,17 @@
 
       <!-- Scoring Mode Helper Banner -->
       <div id="scoringBanner" class="hidden w-full mb-2.5 px-3.5 py-2.5 rounded-xl bg-emerald-950/85 border border-emerald-500/40 text-emerald-100 text-xs sm:text-sm flex flex-wrap items-center justify-between gap-2">
-        <div class="flex flex-col gap-2 min-w-0">
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="text-emerald-400 font-bold">โหมดนับคะแนน:</span>
-            <span>แตะกลุ่มหมากที่ตายเพื่อเอาออก หรือเลือกสีแล้วแตะจุดว่างเพื่อกำหนดพื้นที่ด้วยตนเอง</span>
-          </div>
-          <div class="flex flex-wrap items-center gap-1.5">
-            <span class="text-emerald-100/70 mr-1">กำหนดจุดว่าง:</span>
-            <button id="btnScoreBrushBlack" data-score-brush="1" type="button" aria-pressed="false" class="score-brush-btn px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-black border border-stone-500 text-white text-xs font-semibold">● พื้นที่ดำ</button>
-            <button id="btnScoreBrushWhite" data-score-brush="2" type="button" aria-pressed="false" class="score-brush-btn px-2.5 py-1 rounded-lg bg-white hover:bg-stone-100 border border-stone-300 text-stone-900 text-xs font-semibold">○ พื้นที่ขาว</button>
-            <button id="btnScoreBrushNeutral" data-score-brush="3" type="button" aria-pressed="false" class="score-brush-btn px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-50 border border-amber-300 text-amber-950 text-xs font-semibold">กลาง / ไม่นับ</button>
-            <button id="btnScoreBrushAuto" data-score-brush="0" type="button" aria-pressed="false" class="score-brush-btn px-2.5 py-1 rounded-lg bg-stone-700 hover:bg-stone-600 border border-stone-500 text-stone-100 text-xs font-semibold">↺ อัตโนมัติ</button>
-          </div>
+        <div class="flex items-center gap-2">
+          <span class="text-emerald-400 font-bold">โหมดนับคะแนน:</span>
+          <span>แตะกลุ่มหมากที่ตายแล้วบนกระดานเพื่อระบุเป็นเชลย หรือกดสรุปผล</span>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <button id="btnShowScoreSummary" type="button" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs">สรุปผลคะแนน</button>
-          <button id="btnExitScoring" type="button" class="px-3 py-1 rounded-lg bg-stone-700 hover:bg-stone-600 text-stone-200 text-xs">กลับไปเล่นต่อ</button>
+        <div class="flex items-center gap-2">
+          <button id="btnShowScoreSummary" type="button" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs">
+            สรุปผลคะแนน
+          </button>
+          <button id="btnExitScoring" type="button" class="px-3 py-1 rounded-lg bg-stone-700 hover:bg-stone-600 text-stone-200 text-xs">
+            กลับไปเล่นต่อ
+          </button>
         </div>
       </div>
 
@@ -288,7 +278,7 @@
                 พร้อมเริ่มกระดาน 19×19
               </h2>
               <p id="overlaySubtitle" class="text-xs sm:text-sm text-amber-200/80 mt-1 leading-relaxed">
-                เล่นกับ KataGo AI • ระดับความท้าทาย 5 คิว (โดยประมาณ)<br/>เวลา 30:00 ต่อคน (หมากดำเดินก่อน)
+                เล่นกับ AI • ระดับ 5 คิว (ปานกลาง)<br/>เวลา 30:00 ต่อคน (หมากดำเดินก่อน)
               </p>
             </div>
 
@@ -344,7 +334,7 @@
                 <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-stone-700 via-stone-900 to-black border border-stone-500 shadow-md shrink-0 flex items-center justify-center">
                   <div class="w-2 h-2 rounded-full bg-stone-500/40 -translate-x-0.5 -translate-y-0.5"></div>
                 </div>
-                <div class="font-bold text-xs sm:text-sm text-amber-50 truncate min-w-0" id="blackPlayerName">หมากดำ (คุณ)</div>
+                <div class="font-bold text-xs sm:text-sm text-amber-50 whitespace-nowrap" id="blackPlayerName">หมากดำ (คุณ)</div>
               </div>
 
               <div class="flex items-center justify-between lg:justify-start gap-1.5 text-[11px] sm:text-xs">
@@ -372,7 +362,7 @@
                 <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-white via-[#f3efe6] to-[#c9c1b0] border border-stone-300 shadow-md shrink-0 flex items-center justify-center">
                   <div class="w-2 h-2 rounded-full bg-white -translate-x-0.5 -translate-y-0.5"></div>
                 </div>
-                <div class="font-bold text-xs sm:text-sm text-amber-50 truncate min-w-0" id="whitePlayerName">หมากขาว (AI)</div>
+                <div class="font-bold text-xs sm:text-sm text-amber-50 whitespace-nowrap" id="whitePlayerName">หมากขาว (AI)</div>
               </div>
 
               <div class="flex items-center justify-between lg:justify-start gap-1.5 text-[11px] sm:text-xs">
@@ -394,11 +384,6 @@
 
       <!-- TAB 1 PANEL: AI Rank & Time Control Card -->
       <div id="panelVsAI" class="zen-panel rounded-2xl p-3.5 sm:p-4 space-y-2.5">
-        <div class="flex items-center gap-2">
-          <label for="playerNameInputAI" class="text-xs sm:text-sm font-semibold text-amber-200 shrink-0">👤 ชื่อของคุณ</label>
-          <input id="playerNameInputAI" type="text" maxlength="16" placeholder="ใส่ชื่อผู้เล่น"
-            class="player-name-input flex-1 min-w-0 px-3 py-1.5 rounded-xl bg-[#1a1510] border border-amber-700/50 text-amber-50 placeholder-amber-200/35 text-xs sm:text-sm focus:outline-none focus:border-amber-400" />
-        </div>
         <div class="flex items-center justify-between">
           <label for="aiRankSelect" class="text-xs sm:text-sm font-semibold text-amber-200 flex items-center gap-1.5">
             <span>🎯 ระดับความยากของ AI</span>
@@ -419,29 +404,29 @@
           <option value="2k">2 คิว (เชี่ยวชาญ) — คุมสมดุลพื้นที่และอิทธิพล</option>
           <option value="1k">1 คิว (ใกล้ดั้ง) — บุกทำลายพื้นที่และเล่นโค</option>
           <option value="1d">1 ดั้ง (ระดับสูง) — วิเคราะห์เชิงลึกมาตรฐาน</option>
-          <option value="2d">2 ดั้ง (ยอดฝีมือ) — ค้นหาหมากลึกขึ้นและวางแผนระยะยาว</option>
-          <option value="3d">3 ดั้ง (ท้าทายสูงสุด) — ใช้งบค้นหาและเวลาคิดสูงสุด</option>
+          <option value="2d">2 ดั้ง (ยอดฝีมือ) — อ่านชิโจขั้นบันได & RAVE เชิงลึก</option>
+          <option value="3d">3 ดั้ง (ระดับอาจารย์) — อ่านเป็นตาย 2 ห้อง & MCTS-RAVE ขั้นสูง</option>
         </select>
 
         <p id="rankDescription" class="text-[11px] sm:text-xs text-amber-200/65 leading-relaxed">
-          KataGo จะใช้ Neural Network และการค้นหาเกมจริง โดยปรับจำนวน visits และเวลาคิดตามระดับที่เลือก
+          KataGo จะจำกัดจำนวนรอบค้นหาและเวลาคิดตามระดับที่เลือก
         </p>
-
-        <div id="kataGoStatusBox" class="px-3 py-2 rounded-xl bg-[#18130e] border border-emerald-800/40 text-xs" aria-live="polite">
+        <div id="kataGoStatusBox" class="px-3 py-2 rounded-xl bg-[#18130e] border border-emerald-800/40 text-xs">
           <div class="flex items-center justify-between gap-2">
             <span class="text-emerald-200/80">🧠 KataGo Engine</span>
-            <span id="kataGoEngineStatus" class="font-mono font-semibold text-amber-300 text-right">รอเริ่มโหลด Engine</span>
+            <span id="kataGoEngineStatus" class="font-mono font-semibold text-amber-300">ยังไม่เริ่มโหลด</span>
           </div>
-          <p class="text-[10px] text-amber-200/45 mt-1 leading-relaxed">โหลดโมเดลจริงเมื่อเริ่มคิดตาแรก • ใช้ WebGPU หากรองรับ มิฉะนั้นใช้ CPU</p>
         </div>
-        <p class="text-[10px] text-amber-200/45 leading-relaxed">* ระดับคิว/ดั้งเป็นระดับความท้าทายโดยประมาณจากการจำกัดเวลาคิดและจำนวน visits ไม่ใช่การรับรอง Rank อย่างเป็นทางการ</p>
+        <p class="text-[10px] text-amber-200/45 leading-relaxed">
+          * ชื่อคิว/ดั้งเป็นระดับความท้าทายโดยประมาณจากการจำกัดการค้นหา ไม่ใช่การจัดอันดับฝีมือที่ผ่านการเทียบมาตรฐาน
+        </p>
 
         <!-- Real-Time AI Score Evaluation Monitor -->
-        <div id="aiScoreMonitorBox" class="px-3 py-2 rounded-xl bg-[#18130e] border border-amber-800/40 flex items-center justify-between gap-2 text-xs">
+        <div id="aiScoreMonitorBox" class="hidden px-3 py-2 rounded-xl bg-[#18130e] border border-amber-800/40 flex items-center justify-between gap-2 text-xs">
           <span class="text-amber-200/75 flex items-center gap-1.5">
-            <span>📊 KataGo ประเมินตำแหน่ง:</span>
+            <span>📊 ประเมินแต้ม (AI):</span>
           </span>
-          <span id="aiScoreEvalText" class="font-mono font-bold text-amber-300">รอ KataGo ประเมิน (โคมิ 6.5)</span>
+          <span id="aiScoreEvalText" class="font-mono font-bold text-amber-300">รอเริ่มเกม (โคมิ 6.5)</span>
         </div>
 
         <button id="btnPanelOpenSettings" type="button"
@@ -463,10 +448,11 @@
 
         <!-- Initial Lobby State (Create or Join) -->
         <div id="onlineLobbyControls" class="space-y-2.5">
-          <div class="flex items-center gap-2 text-xs">
-            <label for="playerNameInputOnline" class="text-amber-200/80 font-medium shrink-0">👤 ชื่อของคุณ:</label>
-            <input id="playerNameInputOnline" type="text" maxlength="16" placeholder="ใส่ชื่อก่อนสร้าง/เข้าห้อง"
-              class="player-name-input flex-1 min-w-0 px-2.5 py-1.5 rounded-lg bg-[#18130e] border border-amber-700/50 text-amber-50 placeholder-amber-200/35 text-xs focus:outline-none focus:border-amber-400" />
+          <div class="space-y-1">
+            <label for="onlinePlayerNameInput" class="text-amber-200/80 text-xs font-semibold">👤 ชื่อของคุณในห้อง</label>
+            <input id="onlinePlayerNameInput" type="text" maxlength="20" autocomplete="nickname"
+              placeholder="พิมพ์ชื่อที่ต้องการให้คู่แข่งเห็น"
+              class="w-full px-3 py-2 rounded-xl bg-[#18130e] border border-amber-700/50 text-amber-50 placeholder-amber-200/35 text-sm focus:outline-none focus:border-amber-400" />
           </div>
           <div class="flex items-center justify-between gap-2 text-xs">
             <label for="onlineTimeSelect" class="text-amber-200/80 font-medium shrink-0">⏱️ เวลาต่อคน:</label>
@@ -532,17 +518,6 @@
           </div>
 
           <!-- Quick Thai Chat Messages -->
-          <div id="onlineChatBox" class="hidden space-y-1.5">
-            <div class="text-[11px] font-semibold text-amber-200/70">💬 แชทกับคู่แข่ง</div>
-            <div id="chatLog" class="h-36 overflow-y-auto bg-[#110d0a] rounded-xl p-2 border border-amber-900/40 text-xs space-y-1"></div>
-            <div class="flex gap-2">
-              <input id="chatInput" type="text" maxlength="200" placeholder="พิมพ์ข้อความ แล้วกด Enter..."
-                class="flex-1 min-w-0 px-3 py-2 rounded-xl bg-[#18130e] border border-amber-700/50 text-amber-50 placeholder-amber-200/35 text-xs sm:text-sm focus:outline-none focus:border-amber-400" />
-              <button id="btnSendChat" type="button"
-                class="zen-btn px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs sm:text-sm shrink-0">ส่ง</button>
-            </div>
-          </div>
-
           <div id="onlineReactionsBox" class="hidden space-y-1.5">
             <div class="text-[11px] font-semibold text-amber-200/70">ส่งข้อความทักทายคู่แข่ง:</div>
             <div class="grid grid-cols-2 gap-1.5">
@@ -559,6 +534,26 @@
                 ขอบคุณสำหรับเกมครับ 🙇‍♂️
               </button>
             </div>
+          </div>
+
+          <!-- Live Text Chat -->
+          <div id="onlineChatBox" class="space-y-2 p-3 rounded-xl bg-[#18130e] border border-amber-700/40">
+            <div class="flex items-center justify-between">
+              <div class="text-xs font-bold text-amber-200">💬 แชทระหว่างเล่น</div>
+              <div id="onlineChatCount" class="text-[10px] text-amber-200/45">0 ข้อความ</div>
+            </div>
+            <div id="onlineChatMessages" role="log" aria-live="polite"
+              class="h-40 overflow-y-auto space-y-2 rounded-lg bg-[#110d0a] border border-amber-900/30 p-2 text-xs">
+              <div class="text-center text-amber-200/40 py-5">เริ่มสนทนากับคู่แข่งได้เลยครับ</div>
+            </div>
+            <form id="onlineChatForm" class="flex gap-2">
+              <input id="onlineChatInput" type="text" maxlength="300" autocomplete="off"
+                placeholder="พิมพ์ข้อความ..."
+                class="flex-1 min-w-0 px-3 py-2 rounded-xl bg-[#110d0a] border border-amber-700/50 text-amber-50 placeholder-amber-200/35 text-xs focus:outline-none focus:border-amber-400" />
+              <button type="submit" id="btnSendChat"
+                class="zen-btn px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs">ส่ง</button>
+            </form>
+            <div class="text-[10px] text-amber-200/40">ข้อความจะแสดงเฉพาะผู้เล่นในห้องนี้</div>
           </div>
 
           <!-- Rematch & Leave Room -->
@@ -694,8 +689,8 @@
             <option value="2k">2 คิว (เชี่ยวชาญ) — คุมสมดุลพื้นที่และอิทธิพล</option>
             <option value="1k">1 คิว (ใกล้ดั้ง) — บุกทำลายพื้นที่และเล่นโค</option>
             <option value="1d">1 ดั้ง (ระดับสูง) — วิเคราะห์เชิงลึกมาตรฐาน</option>
-            <option value="2d">2 ดั้ง (ยอดฝีมือ) — ค้นหาหมากลึกขึ้นและวางแผนระยะยาว</option>
-            <option value="3d">3 ดั้ง (ท้าทายสูงสุด) — ใช้งบค้นหาและเวลาคิดสูงสุด</option>
+            <option value="2d">2 ดั้ง (ยอดฝีมือ) — อ่านชิโจขั้นบันได & RAVE เชิงลึก</option>
+            <option value="3d">3 ดั้ง (ระดับอาจารย์) — อ่านเป็นตาย 2 ห้อง & MCTS-RAVE ขั้นสูง</option>
           </select>
         </div>
 
@@ -828,7 +823,7 @@
           ผลการนับคะแนน (กติกาพื้นที่แบบจีน)
         </div>
         <h2 id="scoreWinnerTitle" class="font-serif-thai text-xl sm:text-2xl font-bold text-amber-100">หมากดำชนะ 4.5 แต้ม</h2>
-        <p id="scoreSubtitle" class="text-xs text-amber-200/70 mt-1">หมากที่ยังอยู่บนกระดาน + พื้นที่อาณาเขต + โคมิ</p>
+        <p id="scoreSubtitle" class="text-xs text-amber-200/70 mt-1">รวมเม็ดหมากบนกระดาน + พื้นที่ + หมากตาย + โคมิ</p>
       </div>
 
       <!-- Breakdown Table -->
@@ -842,6 +837,7 @@
           <div class="space-y-1.5 text-xs text-amber-200/75">
             <div class="flex justify-between"><span>หมากบนกระดาน:</span><strong id="scBlackStones" class="text-amber-100 font-mono">0</strong></div>
             <div class="flex justify-between"><span>พื้นที่อาณาเขต:</span><strong id="scBlackTerritory" class="text-amber-100 font-mono">0</strong></div>
+            <div class="flex justify-between"><span>หมากขาวที่ตาย:</span><strong id="scBlackDead" class="text-amber-100 font-mono">0</strong></div>
             <div class="flex justify-between pt-1.5 border-t border-stone-800 text-sm font-bold text-amber-300">
               <span>รวมทั้งหมด:</span><span id="scBlackTotal" class="font-mono">0</span>
             </div>
@@ -857,14 +853,13 @@
           <div class="space-y-1.5 text-xs text-amber-200/75">
             <div class="flex justify-between"><span>หมากบนกระดาน:</span><strong id="scWhiteStones" class="text-amber-100 font-mono">0</strong></div>
             <div class="flex justify-between"><span>พื้นที่อาณาเขต:</span><strong id="scWhiteTerritory" class="text-amber-100 font-mono">0</strong></div>
-            <div class="flex justify-between"><span>โคมิ:</span><strong id="scWhiteBonus" class="text-amber-100 font-mono">6.5</strong></div>
+            <div class="flex justify-between"><span>หมากดำที่ตาย + โคมิ:</span><strong id="scWhiteBonus" class="text-amber-100 font-mono">6.5</strong></div>
             <div class="flex justify-between pt-1.5 border-t border-stone-800 text-sm font-bold text-amber-300">
               <span>รวมทั้งหมด:</span><span id="scWhiteTotal" class="font-mono">6.5</span>
             </div>
           </div>
         </div>
       </div>
-      <p id="scoreDeadInfo" class="text-[11px] text-amber-200/55 text-center -mt-2 mb-4">หมากที่ทำเครื่องหมายว่าตายจะถูกนำออกก่อนนับพื้นที่ และไม่บวกเป็นคะแนนเชลยซ้ำ</p>
 
       <div class="grid grid-cols-2 gap-2.5">
         <button id="btnResumeFromScore" type="button" class="zen-btn py-2.5 px-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-100 text-xs sm:text-sm font-semibold">
@@ -920,47 +915,47 @@
     const RANK_META = {
       '8k': {
         badge: '8 คิว (เริ่มต้น)',
-        desc: 'ไม่เดินรูปสามเหลี่ยมทึบ ไม่ถมพื้นที่ตัวเอง รู้จักรักษาห้องและเปิดจุดใหญ่เส้น 3–4'
+        desc: 'ค้นหาสั้นมากและสุ่มทางเลือกมากขึ้น เหมาะสำหรับผู้เริ่มต้น'
       },
       '7k': {
         badge: '7 คิว (พื้นฐาน)',
-        desc: 'รู้จักหนีอาตาริ สร้างปากเสือและรูปสร้าง 2 ห้อง พร้อมเปิดมุมและด้านข้างมาตรฐาน'
+        desc: 'ค้นหาจำนวนรอบน้อย ลดความแม่นยำลงเพื่อให้เล่นง่ายขึ้น'
       },
       '6k': {
         badge: '6 คิว (ฝึกฝน)',
-        desc: 'ประเมินอาณาเขตด้วย Bouzy Dilation รู้จักทิ้งหมากตาย (Tenuki) ไปแย่งจุดใหญ่'
+        desc: 'เพิ่มจำนวนรอบค้นหา แต่ยังเปิดโอกาสให้เลือกหมากรอง'
       },
       '5k': {
         badge: '5 คิว (ปานกลาง)',
-        desc: 'เปิดหมากมุมและกระโดด 1 ตา/ตาหมากรุกอย่างเป็นธรรมชาติ ไม่สร้างก้อนหมากตัน'
+        desc: 'ระดับกลาง ใช้การค้นหา KataGo ระยะสั้นถึงปานกลาง'
       },
       '4k': {
         badge: '4 คิว (พัฒนา)',
-        desc: 'ตรวจจับกลุ่มหมากที่ยังไม่มี 2 ห้องเพื่อสร้างรูปสร้างห้องหรือสู้จับกินแข่งลมหายใจ'
+        desc: 'ค้นหาลึกขึ้น ลดการสุ่มหมากที่ไม่ใช่ตัวเลือกหลัก'
       },
       '3k': {
         badge: '3 คิว (ก้าวหน้า)',
-        desc: 'อ่านอาตาริ ชิโจขั้นบันได และจุดตัดคมชัด ลดจุดอ่อนของกลุ่มหมากทั่วกระดาน'
+        desc: 'ค้นหาลึกขึ้นอีก เหมาะกับผู้เล่นที่อ่านเกมได้คล่อง'
       },
       '2k': {
         badge: '2 คิว (เชี่ยวชาญ)',
-        desc: 'คุมสมดุลระหว่างอิทธิพลกลางกระดานและพื้นที่มุม พร้อมบุกลดทอนพื้นที่ใหญ่'
+        desc: 'เพิ่มจำนวนรอบและเวลาคิดเพื่อเลือกหมากที่แม่นขึ้น'
       },
       '1k': {
         badge: '1 คิว (ใกล้ดั้ง)',
-        desc: 'วิเคราะห์รูปหมากขั้นสูง การบุก 3-3 / ลดทอนพื้นที่ และอ่านเป็นตายกลุ่มใหญ่'
+        desc: 'ใช้การค้นหาค่อนข้างลึกและลดการสุ่มทางเลือก'
       },
       '1d': {
         badge: '1 ดั้ง (ระดับสูง)',
-        desc: 'เพิ่มเวลาคิดและจำนวน visits เพื่อสำรวจทางเลือกเชิงกลยุทธ์ได้ละเอียดขึ้น'
+        desc: 'ค้นหาลึก ใช้เวลาคิดมากขึ้น'
       },
       '2d': {
         badge: '2 ดั้ง (ยอดฝีมือ)',
-        desc: 'วิเคราะห์เป็นตาย 2 ห้อง จุดตายสร้างห้อง (Nakade) และอ่านชิโจสุดขอบกระดาน'
+        desc: 'ค้นหาลึกมากขึ้น โดยจำกัดการสุ่มเลือกหมาก'
       },
       '3d': {
         badge: '3 ดั้ง (ระดับอาจารย์)',
-        desc: 'ใช้งบค้นหาสูงสุดของโหมดนี้ เหมาะกับอุปกรณ์ที่มีหน่วยประมวลผลและหน่วยความจำเพียงพอ'
+        desc: 'ระดับสูงสุดของโปรไฟล์นี้ ใช้งบค้นหาและเวลาคิดมากที่สุด'
       }
     };
 
@@ -1248,14 +1243,11 @@
         return { valid: true, board: nextBoard, captured, koPoint: nextKo };
       },
 
-      calculateChineseScore(board, deadStonesSet, komi, manualTerritoryMap = null) {
+      calculateChineseScore(board, deadStonesSet, komi) {
         const cleanBoard = new Uint8Array(board);
         let blackDead = 0;
         let whiteDead = 0;
 
-        // Under Chinese area scoring, agreed dead stones are removed from the board.
-        // Their vacated intersections are then evaluated as part of the empty regions;
-        // they are NOT added again as prisoner bonuses.
         deadStonesSet.forEach(idx => {
           if (cleanBoard[idx] === BLACK) blackDead++;
           else if (cleanBoard[idx] === WHITE) whiteDead++;
@@ -1274,8 +1266,6 @@
         let blackTerritory = 0;
         let whiteTerritory = 0;
 
-        // Automatic territory: an empty region belongs to a color only when its
-        // orthogonal boundary touches that color and no living opposing stones.
         for (let i = 0; i < TOTAL_CELLS; i++) {
           if (cleanBoard[i] === EMPTY && !visited[i]) {
             const region = [];
@@ -1311,33 +1301,8 @@
           }
         }
 
-        // Optional human adjudication for disputed/neutral intersections.
-        // 0 = automatic, BLACK/WHITE = assign to that color, 3 = neutral.
-        if (manualTerritoryMap && manualTerritoryMap.length === TOTAL_CELLS) {
-          for (let i = 0; i < TOTAL_CELLS; i++) {
-            if (cleanBoard[i] !== EMPTY) continue;
-            const override = manualTerritoryMap[i];
-            if (override === 0) continue;
-
-            const previousOwner = territoryMap[i];
-            if (previousOwner === BLACK) blackTerritory--;
-            else if (previousOwner === WHITE) whiteTerritory--;
-
-            if (override === BLACK) {
-              territoryMap[i] = BLACK;
-              blackTerritory++;
-            } else if (override === WHITE) {
-              territoryMap[i] = WHITE;
-              whiteTerritory++;
-            } else if (override === 3) {
-              territoryMap[i] = EMPTY;
-            }
-          }
-        }
-
-        // Chinese area score = living stones on board + owned empty intersections + komi.
-        const blackTotal = blackStones + blackTerritory;
-        const whiteTotal = whiteStones + whiteTerritory + komi;
+        const blackTotal = blackStones + blackTerritory + whiteDead;
+        const whiteTotal = whiteStones + whiteTerritory + blackDead + komi;
         const diff = blackTotal - whiteTotal;
 
         return {
@@ -2689,14 +2654,6 @@
         this._initWorker();
       }
 
-      _computeFallback(params) {
-        return fallbackAiInstance.computeBestMove(
-          new Uint8Array(params.board), params.aiColor, params.koPoint,
-          params.lastMove, params.moveNumber, params.komi, params.rankKey,
-          params.opponentPassed
-        );
-      }
-
       _initWorker() {
         try {
           const workerSource = `
@@ -2706,8 +2663,14 @@
               const { requestId, board, aiColor, koPoint, lastMove, moveNumber, komi, rankKey, opponentPassed } = e.data;
               try {
                 const result = aiCore.computeBestMove(
-                  new Uint8Array(board), aiColor, koPoint, lastMove,
-                  moveNumber, komi, rankKey, opponentPassed
+                  new Uint8Array(board),
+                  aiColor,
+                  koPoint,
+                  lastMove,
+                  moveNumber,
+                  komi,
+                  rankKey,
+                  opponentPassed
                 );
                 self.postMessage({ requestId, result });
               } catch (err) {
@@ -2720,19 +2683,14 @@
           this.worker = new Worker(url);
           this.worker.onmessage = (e) => {
             const { requestId, result } = e.data;
-            const pending = this.callbacks.get(requestId);
-            if (pending) {
+            const cb = this.callbacks.get(requestId);
+            if (cb) {
               this.callbacks.delete(requestId);
-              pending.resolve(result);
+              cb(result);
             }
           };
           this.worker.onerror = () => {
             this.worker = null;
-            for (const [id, pending] of this.callbacks) {
-              this.callbacks.delete(id);
-              try { pending.resolve(this._computeFallback(pending.params)); }
-              catch (err) { pending.resolve({ move: -1, error: String(err) }); }
-            }
           };
         } catch (err) {
           this.worker = null;
@@ -2743,29 +2701,31 @@
         return new Promise((resolve) => {
           const requestId = ++this.pendingRequestId;
           if (this.worker) {
-            this.callbacks.set(requestId, { resolve, params });
-            try {
-              this.worker.postMessage({
-                requestId,
-                board: Array.from(params.board),
-                aiColor: params.aiColor,
-                koPoint: params.koPoint,
-                lastMove: params.lastMove,
-                moveNumber: params.moveNumber,
-                komi: params.komi,
-                rankKey: params.rankKey,
-                opponentPassed: params.opponentPassed
-              });
-            } catch (err) {
-              this.callbacks.delete(requestId);
-              try { resolve(this._computeFallback(params)); }
-              catch (fallbackError) { resolve({ move: -1, error: String(fallbackError) }); }
-            }
+            this.callbacks.set(requestId, resolve);
+            this.worker.postMessage({
+              requestId,
+              board: Array.from(params.board),
+              aiColor: params.aiColor,
+              koPoint: params.koPoint,
+              lastMove: params.lastMove,
+              moveNumber: params.moveNumber,
+              komi: params.komi,
+              rankKey: params.rankKey,
+              opponentPassed: params.opponentPassed
+            });
           } else {
             setTimeout(() => {
-              if (requestId !== this.pendingRequestId) return resolve({ cancelled: true });
-              try { resolve(this._computeFallback(params)); }
-              catch (err) { resolve({ move: -1, error: String(err) }); }
+              const move = fallbackAiInstance.computeBestMove(
+                new Uint8Array(params.board),
+                params.aiColor,
+                params.koPoint,
+                params.lastMove,
+                params.moveNumber,
+                params.komi,
+                params.rankKey,
+                params.opponentPassed
+              );
+              resolve(move);
             }, 60);
           }
         });
@@ -2773,12 +2733,13 @@
 
       cancelPending() {
         this.pendingRequestId++;
-        for (const pending of this.callbacks.values()) pending.resolve({ cancelled: true });
         this.callbacks.clear();
       }
     }
 
-    // Real KataGo browser engine. The original hand-written AI remains as a safe fallback.
+
+    // KataGo WebGPU adapter. The legacy heuristic AI remains as a visible fallback
+    // only when the real engine cannot start on this browser/device.
     class KataGoController {
       constructor(fallbackController) {
         this.fallback = fallbackController;
@@ -2789,22 +2750,20 @@
         this.pending = new Map();
         this.generation = 0;
         this.fallbackNoticeShown = false;
-        this.initFailureMessage = '';
-        this.backend = '';
         this.netFile = 'model-b10c128.bin.gz';
-        this.engineBase = new URL('katago/', document.baseURI).href;
+        this.engineBase = 'katago/';
         this.profiles = {
-          '8k': { cap: 12, visits: 24, ms: 900, temp: 0.90, policyTemp: 1.60 },
-          '7k': { cap: 24, visits: 40, ms: 1100, temp: 0.82, policyTemp: 1.52 },
-          '6k': { cap: 45, visits: 70, ms: 1300, temp: 0.72, policyTemp: 1.44 },
-          '5k': { cap: 80, visits: 120, ms: 1600, temp: 0.60, policyTemp: 1.35 },
-          '4k': { cap: 140, visits: 200, ms: 2000, temp: 0.48, policyTemp: 1.27 },
-          '3k': { cap: 220, visits: 320, ms: 2500, temp: 0.36, policyTemp: 1.20 },
-          '2k': { cap: 350, visits: 500, ms: 3000, temp: 0.25, policyTemp: 1.14 },
-          '1k': { cap: 600, visits: 800, ms: 3600, temp: 0.15, policyTemp: 1.09 },
-          '1d': { cap: 900, visits: 1200, ms: 4500, temp: 0.08, policyTemp: 1.04 },
+          '8k': { cap: 12,   visits: 24,   ms: 900,  temp: 0.90, policyTemp: 1.60 },
+          '7k': { cap: 24,   visits: 40,   ms: 1100, temp: 0.82, policyTemp: 1.52 },
+          '6k': { cap: 45,   visits: 70,   ms: 1300, temp: 0.72, policyTemp: 1.44 },
+          '5k': { cap: 80,   visits: 120,  ms: 1600, temp: 0.60, policyTemp: 1.35 },
+          '4k': { cap: 140,  visits: 200,  ms: 2000, temp: 0.48, policyTemp: 1.27 },
+          '3k': { cap: 220,  visits: 320,  ms: 2500, temp: 0.36, policyTemp: 1.20 },
+          '2k': { cap: 350,  visits: 500,  ms: 3000, temp: 0.25, policyTemp: 1.14 },
+          '1k': { cap: 600,  visits: 800,  ms: 3600, temp: 0.15, policyTemp: 1.09 },
+          '1d': { cap: 900,  visits: 1200, ms: 4500, temp: 0.08, policyTemp: 1.04 },
           '2d': { cap: 1500, visits: 1900, ms: 5500, temp: 0.03, policyTemp: 1.00 },
-          '3d': { cap: 0, visits: 2800, ms: 7000, temp: 0.00, policyTemp: 1.00 }
+          '3d': { cap: 0,    visits: 2800, ms: 7000, temp: 0.00, policyTemp: 1.00 }
         };
       }
 
@@ -2812,11 +2771,7 @@
         const el = document.getElementById('kataGoEngineStatus');
         if (!el) return;
         el.textContent = String(message);
-        el.className = 'font-mono font-semibold text-right ' + (good ? 'text-emerald-300' : 'text-amber-300');
-      }
-
-      assetUrl(file) {
-        return new URL(file, this.engineBase).href;
+        el.className = 'font-mono font-semibold ' + (good ? 'text-emerald-300' : 'text-amber-300');
       }
 
       call(message, transfer = []) {
@@ -2824,24 +2779,18 @@
           if (!this.worker) return reject(new Error('KataGo worker ยังไม่พร้อม'));
           const id = ++this.requestId;
           this.pending.set(id, { resolve, reject });
-          try {
-            this.worker.postMessage({ id, ...message }, transfer);
-          } catch (error) {
-            this.pending.delete(id);
-            reject(error);
-          }
+          this.worker.postMessage({ id, ...message }, transfer);
         });
       }
 
       createWorker() {
         if (this.worker) return;
-        this.worker = new Worker(this.assetUrl('kata-worker.js'));
+        this.worker = new Worker(this.engineBase + 'kata-worker.js');
         this.worker.onmessage = (event) => {
           const data = event.data || {};
           if (data.diag) {
-            const diagText = String(data.diag);
-            if (/error|failed|exception|aborted/i.test(diagText)) this.setStatus(diagText.slice(0, 90));
-            else this.setStatus('เตรียม Engine…');
+            console.info(`[KataGo worker${data.requestId == null ? '' : ` request ${data.requestId}`}] ${data.diag}`);
+            this.setStatus('เตรียม Engine…');
             return;
           }
           if (data.progress) {
@@ -2867,58 +2816,68 @@
       }
 
       async ensureReady() {
-        if (this.ready) return { backend: this.backend };
+        if (this.ready) return;
         if (!window.crossOriginIsolated || typeof SharedArrayBuffer === 'undefined') {
-          throw new Error('โฮสต์ยังไม่เปิด COOP/COEP สำหรับ WebAssembly threads — ให้ Deploy ผ่าน Netlify หรือ Cloudflare Pages');
+          throw new Error('เว็บไซต์ยังไม่ได้เปิด COOP/COEP สำหรับ WebAssembly threads');
         }
         this.createWorker();
         if (!this.initPromise) {
           this.initPromise = (async () => {
             this.setStatus('กำลังโหลด KataGo…');
-            const [wasmResponse, jsResponse, modelResponse] = await Promise.all([
-              fetch(this.assetUrl('kataeval-mt.wasm'), { cache: 'force-cache' }),
-              fetch(this.assetUrl('kataeval-mt.js'), { cache: 'force-cache' }),
-              fetch(this.assetUrl(this.netFile), { method: 'HEAD', cache: 'force-cache' })
+            const [wasmResponse, jsResponse] = await Promise.all([
+              fetch(this.engineBase + 'kataeval-mt.wasm'),
+              fetch(this.engineBase + 'kataeval-mt.js')
             ]);
-            if (!wasmResponse.ok || !jsResponse.ok) throw new Error('ไม่พบไฟล์ KataGo WASM ที่ Build แล้ว');
+            if (!wasmResponse.ok || !jsResponse.ok) {
+              throw new Error('ไม่พบไฟล์ KataGo WASM ที่ Build แล้ว');
+            }
+            const [wasmBinary, jsText] = await Promise.all([
+              wasmResponse.arrayBuffer(),
+              jsResponse.text()
+            ]);
+            const modelResponse = await fetch(this.engineBase + this.netFile, { method: 'HEAD' });
             if (!modelResponse.ok) throw new Error('ไม่พบไฟล์โมเดล KataGo');
-            const [wasmBinary, jsText] = await Promise.all([wasmResponse.arrayBuffer(), jsResponse.text()]);
             const info = await this.call({
-              type: 'init', netFile: this.netFile, boardSize: BOARD_SIZE,
-              wasmBinary, jsText, forceCpu: false, fp16: false, optimism: 0
+              type: 'init',
+              netFile: this.netFile,
+              boardSize: BOARD_SIZE,
+              wasmBinary,
+              jsText,
+              forceCpu: false,
+              fp16: false,
+              optimism: 0
             }, [wasmBinary]);
-            this.backend = info.backend || 'KataGo';
             this.ready = true;
-            this.setStatus(`พร้อมใช้งาน · ${this.backend}`, true);
+            this.setStatus(`พร้อมใช้งาน · ${info.backend}`, true);
             return info;
           })();
         }
         try {
-          return await this.initPromise;
+          await this.initPromise;
         } catch (error) {
           this.initPromise = null;
+          // A timed-out createKata/kgeLoad cannot safely be reused: Asyncify or
+          // pthread initialization may still be in flight. Recreate the Worker
+          // before allowing a retry so the old request cannot deadlock the chain.
+          try { this.worker?.terminate(); } catch (_) {}
+          this.worker = null;
           this.ready = false;
-          this.initFailureMessage = error && error.message ? error.message : String(error);
-          if (this.worker) {
-            try { this.worker.terminate(); } catch (_) {}
-            this.worker = null;
-          }
           throw error;
         }
       }
 
       getMoveSequence() {
         const moves = [];
-        // Handicap stones are setup stones, not ordinary moves in the move history.
+        // KataGo's adapter recognizes a leading run of 2+ black setup stones as handicap.
         if (state.handicap >= 2 && state.mode === 'ai') {
           const count = Math.min(9, state.handicap);
           for (let i = 0; i < count; i++) {
-            const [row, col] = HANDICAP_POINTS[i];
-            moves.push({ loc: row * BOARD_SIZE + col, col: BLACK });
+            const point = HANDICAP_POINTS[i];
+            moves.push({ loc: point[0] * BOARD_SIZE + point[1], col: BLACK });
           }
         }
         for (const move of state.moveHistory) {
-          moves.push({ loc: move.idx, col: move.color }); // idx=-1 is a pass
+          moves.push({ loc: move.idx, col: move.color });
         }
         return moves;
       }
@@ -2931,32 +2890,34 @@
 
       async requestMove(params) {
         const generation = this.generation;
-        if (this.initFailureMessage) {
-          this.setStatus('KataGo ไม่พร้อม · ใช้ AI สำรอง');
-          return await this.fallback.requestMove(params);
-        }
         try {
-          const info = await this.ensureReady();
+          await this.ensureReady();
           if (generation !== this.generation) return { cancelled: true };
+
           const profile = this.profiles[params.rankKey] || this.profiles['5k'];
-          await this.call({ type: 'strength', visits: profile.cap, temp: profile.temp, policyTemp: profile.policyTemp });
+          await this.call({
+            type: 'strength',
+            visits: profile.cap,
+            temp: profile.temp,
+            policyTemp: profile.policyTemp
+          });
           if (generation !== this.generation) return { cancelled: true };
+
           this.setStatus('KataGo กำลังวิเคราะห์…');
           const result = await this.call({
-            type: 'search', moves: this.getMoveSequence(), toPlay: params.aiColor,
-            komi: params.komi, visits: profile.visits, ms: profile.ms,
-            threads: this.getSearchThreads(), noPonder: true
+            type: 'search',
+            moves: this.getMoveSequence(),
+            toPlay: params.aiColor,
+            komi: params.komi,
+            visits: profile.visits,
+            ms: profile.ms,
+            threads: this.getSearchThreads(),
+            noPonder: true
           });
           if (generation !== this.generation || result.superseded) return { cancelled: true };
           if (typeof result.best !== 'number') throw new Error('KataGo ไม่ได้ส่งตาเดินกลับมา');
-          this.setStatus(`พร้อม · ${Number(result.nv || 0).toLocaleString()} visits · ${info.backend}`, true);
-          return {
-            engine: 'KataGo', move: result.best,
-            winRate: Number.isFinite(result.wr) ? result.wr : 0.5,
-            aiLead: Number.isFinite(result.score) ? result.score : 0,
-            visits: Number(result.nv || 0), ms: Number(result.ms || profile.ms),
-            backend: info.backend
-          };
+          this.setStatus(`พร้อม · ${Number(result.nv || 0).toLocaleString()} visits`, true);
+          return result.best;
         } catch (error) {
           if (generation !== this.generation) return { cancelled: true };
           this.setStatus('KataGo ไม่พร้อม · ใช้ AI สำรอง');
@@ -2973,7 +2934,8 @@
         if (this.fallback) this.fallback.cancelPending();
         if (this.worker && this.ready) {
           const id = ++this.requestId;
-          try { this.worker.postMessage({ id, type: 'cancel' }); } catch (_) {}
+          // The worker increments its poll token immediately, stopping the active search.
+          this.worker.postMessage({ id, type: 'cancel' });
         }
       }
     }
@@ -3188,28 +3150,21 @@
 
         // 7. Territory Markers during Scoring Mode
         if (state.scoringMode && state.territoryMap) {
+          const sq = Math.max(5, CS * 0.26);
           for (let idx = 0; idx < TOTAL_CELLS; idx++) {
             const owner = state.territoryMap[idx];
-            const manual = state.manualTerritoryMap ? state.manualTerritoryMap[idx] : 0;
-            if (owner === EMPTY && manual !== 3) continue;
+            if (owner === EMPTY) continue;
             if (state.board[idx] !== EMPTY && !state.deadStones.has(idx)) continue;
 
             const r = Math.floor(idx / BOARD_SIZE);
             const c = idx % BOARD_SIZE;
             const cx = M + c * CS;
             const cy = M + r * CS;
-            const sq = Math.max(6, CS * (manual ? 0.36 : 0.31));
 
             ctx.save();
-            if (manual === 3) {
-              ctx.fillStyle = 'rgba(245, 158, 11, 0.18)';
-              ctx.strokeStyle = 'rgba(120, 53, 15, 0.95)';
-              ctx.setLineDash([2, 1]);
-            } else {
-              ctx.fillStyle = owner === BLACK ? 'rgba(20, 20, 20, 0.88)' : 'rgba(250, 248, 242, 0.96)';
-              ctx.strokeStyle = owner === BLACK ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.60)';
-            }
-            ctx.lineWidth = manual ? 1.5 : 1;
+            ctx.fillStyle = owner === BLACK ? 'rgba(20, 20, 20, 0.85)' : 'rgba(250, 248, 242, 0.92)';
+            ctx.strokeStyle = owner === BLACK ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.45)';
+            ctx.lineWidth = 1;
             ctx.fillRect(cx - sq / 2, cy - sq / 2, sq, sq);
             ctx.strokeRect(cx - sq / 2, cy - sq / 2, sq, sq);
             ctx.restore();
@@ -3301,8 +3256,6 @@
       scoringMode: false,
       deadStones: new Set(),
       territoryMap: null,
-      manualTerritoryMap: new Uint8Array(TOTAL_CELLS), // 0 auto, 1 black, 2 white, 3 neutral
-      scoreBrushColor: null,
 
       // Chess Clocks (seconds)
       timeLimitPerPlayer: DEFAULT_TIME_LIMIT, // 0 = unlimited
@@ -3321,8 +3274,9 @@
       isHost: false,
       onlineRole: BLACK,
       onlineConnected: false,
-      localName: '',
-      opponentName: ''
+      blackPlayerName: 'ผู้เล่นดำ',
+      whitePlayerName: 'ผู้เล่นขาว',
+      chatMessages: []
     };
 
     const gobanCanvas = document.getElementById('gobanCanvas');
@@ -3420,13 +3374,9 @@
       state.scoringMode = false;
       state.deadStones = new Set();
       state.territoryMap = null;
-      state.manualTerritoryMap = new Uint8Array(TOTAL_CELLS);
-      state.scoreBrushColor = null;
-      updateScoreBrushUI();
       state.clockPaused = false;
       state.aiConsecutiveLosingTurns = 0;
       state.lastAiScoreEval = null;
-      updateAiScoreMonitorUI(null);
 
       state.blackTimeRemaining = state.timeLimitPerPlayer;
       state.whiteTimeRemaining = state.timeLimitPerPlayer;
@@ -3601,40 +3551,27 @@
         return;
       }
 
-      const aiRequestGeneration = aiController.generation;
       state.aiThinking = true;
       renderGame();
 
-      let aiResult;
-      try {
-        aiResult = await aiController.requestMove({
-          board: state.board,
-          aiColor: state.aiColor,
-          koPoint: state.koPoint,
-          lastMove: state.lastMove,
-          moveNumber: state.moveNumber,
-          komi: state.komi,
-          rankKey: state.aiRank,
-          opponentPassed
-        });
-      } catch (error) {
-        // Do not let an old failed request clear the thinking flag of a newer search.
-        if (aiRequestGeneration !== aiController.generation) return;
-        state.aiThinking = false;
-        renderGame();
-        showToast(`AI คิดหมากไม่สำเร็จ: ${error.message || error}`, 'error');
-        return;
-      }
+      const aiResult = await aiController.requestMove({
+        board: state.board,
+        aiColor: state.aiColor,
+        koPoint: state.koPoint,
+        lastMove: state.lastMove,
+        moveNumber: state.moveNumber,
+        komi: state.komi,
+        rankKey: state.aiRank,
+        opponentPassed
+      });
 
-      // A new game, undo, timeout, or mode change may have cancelled this search.
-      // Check the generation BEFORE changing state.aiThinking so an old request cannot
-      // hide the spinner or unlock input while a newer AI request is still running.
-      if (aiRequestGeneration !== aiController.generation) return;
       state.aiThinking = false;
+
       if (aiResult && aiResult.cancelled) {
         renderGame();
         return;
       }
+
       if (state.gameOver || state.scoringMode || state.currentTurn !== state.aiColor) {
         renderGame();
         return;
@@ -3642,14 +3579,11 @@
 
       const moveIdx = typeof aiResult === 'object' ? aiResult.move : aiResult;
 
-      // KataGo reports estimates from the AI side-to-move perspective.
-      // Do not auto-resign from a short browser search; show the estimate only.
-      if (aiResult && aiResult.engine === 'KataGo') {
-        state.lastAiScoreEval = aiResult;
-        updateKataGoScoreMonitorUI(aiResult);
-      } else if (typeof aiResult === 'object' && typeof aiResult.aiLead === 'number') {
+      // Update continuous AI score evaluation & check resignation threshold
+      if (typeof aiResult === 'object' && typeof aiResult.aiLead === 'number') {
         state.lastAiScoreEval = aiResult;
         updateAiScoreMonitorUI(aiResult);
+
         if (shouldAiResign(aiResult)) {
           handleAiResign(aiResult);
           return;
@@ -3678,24 +3612,11 @@
       }
     }
 
-    function updateKataGoScoreMonitorUI(evalObj) {
-      const el = document.getElementById('aiScoreEvalText');
-      if (!el) return;
-      const winRate = Math.max(0, Math.min(1, Number(evalObj.winRate) || 0.5));
-      const lead = Number(evalObj.aiLead) || 0;
-      const leadText = Math.abs(lead).toFixed(1);
-      const positionText = Math.abs(lead) < 1.5
-        ? 'ตำแหน่งสูสี'
-        : (lead > 0 ? `AI นำประมาณ ${leadText} แต้ม` : `AI ตามประมาณ ${leadText} แต้ม`);
-      el.textContent = `${positionText} · โอกาสชนะ ${Math.round(winRate * 100)}% · ${Number(evalObj.visits || 0).toLocaleString()} visits`;
-      el.className = 'font-mono font-bold ' + (lead >= 0 ? 'text-emerald-400' : 'text-rose-400');
-    }
-
     function updateAiScoreMonitorUI(evalObj) {
       const el = document.getElementById('aiScoreEvalText');
       if (!el) return;
       if (!evalObj) {
-        el.textContent = `รอ KataGo ประเมิน (โคมิ ${state.komi})`;
+        el.textContent = `รอเริ่มเกม (โคมิ ${state.komi})`;
         el.className = 'font-mono font-bold text-amber-300';
         return;
       }
@@ -3811,31 +3732,9 @@
     // -------------------------------------------------------------------------
     // Scoring Mode & Resignation
     // -------------------------------------------------------------------------
-    function updateScoreBrushUI() {
-      document.querySelectorAll('.score-brush-btn').forEach(btn => {
-        const active = state.scoreBrushColor !== null && Number(btn.dataset.scoreBrush) === state.scoreBrushColor;
-        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-        btn.classList.toggle('ring-2', active);
-        btn.classList.toggle('ring-amber-300', active);
-        btn.classList.toggle('ring-offset-1', active);
-        btn.classList.toggle('ring-offset-emerald-950', active);
-      });
-    }
-
-    function setScoringBrush(color) {
-      // Clicking the selected tool again turns the brush off, returning to dead-stone marking.
-      state.scoreBrushColor = state.scoreBrushColor === color ? null : color;
-      updateScoreBrushUI();
-      const labels = { 0: 'อัตโนมัติ', 1: 'พื้นที่ดำ', 2: 'พื้นที่ขาว', 3: 'กลาง / ไม่นับ' };
-      showToast(state.scoreBrushColor === null ? 'ปิดเครื่องมือกำหนดพื้นที่แล้ว' : `เลือก ${labels[color]} — แตะจุดว่างบนกระดาน`, 'info');
-    }
-
     function enterScoringMode() {
       state.scoringMode = true;
       state.deadStones = new Set();
-      state.manualTerritoryMap = new Uint8Array(TOTAL_CELLS);
-      state.scoreBrushColor = null;
-      updateScoreBrushUI();
       recomputeScorePreview();
       renderGame();
     }
@@ -3844,9 +3743,6 @@
       state.scoringMode = false;
       state.deadStones = new Set();
       state.territoryMap = null;
-      state.manualTerritoryMap = new Uint8Array(TOTAL_CELLS);
-      state.scoreBrushColor = null;
-      updateScoreBrushUI();
       state.consecutivePasses = 0;
       renderGame();
     }
@@ -3864,25 +3760,8 @@
       renderGame();
     }
 
-    function markManualTerritoryAt(idx) {
-      if (!state.scoringMode || idx < 0 || idx >= TOTAL_CELLS) return;
-      if (state.board[idx] !== EMPTY && !state.deadStones.has(idx)) return;
-      if (state.scoreBrushColor === null) {
-        showToast('เลือกพื้นที่ดำ พื้นที่ขาว กลาง หรืออัตโนมัติก่อนครับ', 'info');
-        return;
-      }
-      state.manualTerritoryMap[idx] = state.scoreBrushColor;
-      recomputeScorePreview();
-      renderGame();
-    }
-
     function recomputeScorePreview() {
-      const res = GoRulesEngine.calculateChineseScore(
-        state.board,
-        state.deadStones,
-        state.komi,
-        state.manualTerritoryMap
-      );
+      const res = GoRulesEngine.calculateChineseScore(state.board, state.deadStones, state.komi);
       state.territoryMap = res.territoryMap;
       return res;
     }
@@ -3907,13 +3786,12 @@
       document.getElementById('scoreSubtitle').textContent = `หมากดำ ${res.blackTotal.toFixed(1)} แต้ม vs หมากขาว ${res.whiteTotal.toFixed(1)} แต้ม (รวมโคมิ ${res.komi})`;
       document.getElementById('scBlackStones').textContent = res.blackStones;
       document.getElementById('scBlackTerritory').textContent = res.blackTerritory;
+      document.getElementById('scBlackDead').textContent = res.whiteDead;
       document.getElementById('scBlackTotal').textContent = res.blackTotal.toFixed(1);
 
       document.getElementById('scWhiteStones').textContent = res.whiteStones;
       document.getElementById('scWhiteTerritory').textContent = res.whiteTerritory;
-      document.getElementById('scWhiteBonus').textContent = Number(res.komi).toFixed(1);
-      document.getElementById('scoreDeadInfo').textContent =
-        `หมากที่ทำเครื่องหมายว่าตายและนำออก: ดำ ${res.blackDead} เม็ด · ขาว ${res.whiteDead} เม็ด (ไม่นำมาบวกเป็นคะแนนเชลยซ้ำ)`;
+      document.getElementById('scWhiteBonus').textContent = `${res.blackDead} + ${res.komi}`;
       document.getElementById('scWhiteTotal').textContent = res.whiteTotal.toFixed(1);
 
       document.getElementById('scoreModal').classList.remove('hidden');
@@ -3923,7 +3801,6 @@
     function handleResign(resigningColor, isRemote = false) {
       state.gameOver = true;
       state.scoringMode = false;
-      state.aiThinking = false;
       aiController.cancelPending();
       audioEngine.playGongSound();
 
@@ -3984,7 +3861,6 @@
 
     function handleTimeout(loserColor) {
       state.gameOver = true;
-      state.aiThinking = false;
       aiController.cancelPending();
       audioEngine.playGongSound();
 
@@ -4065,9 +3941,6 @@
       state.scoringMode = false;
       state.deadStones = new Set();
       state.territoryMap = null;
-      state.manualTerritoryMap = new Uint8Array(TOTAL_CELLS);
-      state.scoreBrushColor = null;
-      updateScoreBrushUI();
       state.clockPaused = false;
       state.aiConsecutiveLosingTurns = 0;
       state.lastAiScoreEval = null;
@@ -4392,7 +4265,79 @@
       renderGame();
     }
 
+    function getOnlineDisplayName() {
+      const input = document.getElementById('onlinePlayerNameInput');
+      const name = String(input?.value || '').trim().replace(/[<>]/g, '').slice(0, 20);
+      if (input) input.value = name;
+      if (!name) {
+        showToast('กรุณาพิมพ์ชื่อก่อนสร้างหรือเข้าร่วมห้องครับ', 'error');
+        input?.focus();
+        return '';
+      }
+      try { localStorage.setItem('zenWeiqiPlayerName', name); } catch (e) {}
+      return name;
+    }
+
+    function renderOnlineChat() {
+      const box = document.getElementById('onlineChatMessages');
+      const count = document.getElementById('onlineChatCount');
+      if (!box || !count) return;
+      count.textContent = `${state.chatMessages.length} ข้อความ`;
+      box.replaceChildren();
+      if (!state.chatMessages.length) {
+        const empty = document.createElement('div');
+        empty.className = 'text-center text-amber-200/40 py-5';
+        empty.textContent = 'เริ่มสนทนากับคู่แข่งได้เลยครับ';
+        box.appendChild(empty);
+        return;
+      }
+      state.chatMessages.slice(-80).forEach((item) => {
+        const row = document.createElement('div');
+        row.className = `flex ${item.mine ? 'justify-end' : 'justify-start'}`;
+        const bubble = document.createElement('div');
+        bubble.className = `max-w-[88%] rounded-xl px-3 py-2 ${item.mine ? 'bg-amber-700/35 border border-amber-500/30 text-amber-50' : 'bg-[#30251b] border border-stone-600/40 text-stone-100'}`;
+        const who = document.createElement('div');
+        who.className = 'text-[10px] font-bold text-amber-300/80 mb-0.5';
+        who.textContent = item.name;
+        const body = document.createElement('div');
+        body.className = 'whitespace-pre-wrap break-words';
+        body.textContent = item.text;
+        const time = document.createElement('div');
+        time.className = 'text-[9px] text-amber-100/35 text-right mt-1';
+        time.textContent = item.time;
+        bubble.append(who, body, time);
+        row.appendChild(bubble);
+        box.appendChild(row);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function sendOnlineChat(text) {
+      const clean = String(text || '').trim().slice(0, 300);
+      if (!clean || !state.conn || !state.conn.open || !state.onlineConnected) return;
+      const myName = state.onlineRole === BLACK ? state.blackPlayerName : state.whitePlayerName;
+      state.conn.send({ type: 'CHAT', text: clean, name: myName });
+      state.chatMessages.push({
+        name: myName, text: clean, mine: true,
+        time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+      });
+      renderOnlineChat();
+    }
+
+    function addRemoteChatMessage(msg) {
+      const clean = String(msg.text || '').slice(0, 300);
+      const name = String(msg.name || 'คู่แข่ง').slice(0, 20);
+      if (!clean) return;
+      state.chatMessages.push({
+        name, text: clean, mine: false,
+        time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+      });
+      renderOnlineChat();
+    }
+
     function createOnlineRoom() {
+      const displayName = getOnlineDisplayName();
+      if (!displayName) return;
       if (typeof Peer === 'undefined') {
         showToast('ไม่สามารถโหลดระบบ PeerJS ได้ กรุณาตรวจสอบอินเทอร์เน็ต', 'error');
         return;
@@ -4408,6 +4353,10 @@
       state.isHost = true;
       state.onlineRole = BLACK;
       state.onlineConnected = false;
+      state.blackPlayerName = displayName;
+      state.whitePlayerName = 'รอคู่แข่ง';
+      state.chatMessages = [];
+      renderOnlineChat();
       setupNewBoard({ handicap: 0, timeLimit: selectedTime });
 
       updatePeerStatusUI('connecting');
@@ -4446,6 +4395,8 @@
     }
 
     function joinOnlineRoom(rawInput) {
+      const displayName = getOnlineDisplayName();
+      if (!displayName) return;
       if (typeof Peer === 'undefined') {
         showToast('ไม่สามารถโหลดระบบ PeerJS ได้', 'error');
         return;
@@ -4466,6 +4417,10 @@
       state.isHost = false;
       state.onlineRole = WHITE;
       state.onlineConnected = false;
+      state.whitePlayerName = displayName;
+      state.blackPlayerName = 'กำลังเชื่อมต่อ';
+      state.chatMessages = [];
+      renderOnlineChat();
 
       updatePeerStatusUI('connecting');
       const peer = new Peer();
@@ -4487,14 +4442,10 @@
     function setupPeerConnectionHandlers(conn) {
       conn.on('open', () => {
         state.onlineConnected = true;
-        try { conn.send({ type: 'HELLO', name: getMyName() }); } catch (e) {}
-        document.getElementById('onlineChatBox').classList.remove('hidden');
-        appendChatMessage({ system: true, text: 'เชื่อมต่อห้องสำเร็จ — ทักทายกันได้เลย' });
         updatePeerStatusUI('connected');
         document.getElementById('onlineLobbyControls').classList.add('hidden');
         document.getElementById('onlineActiveRoomBox').classList.remove('hidden');
         document.getElementById('onlineReactionsBox').classList.remove('hidden');
-        document.getElementById('onlineChatBox').classList.remove('hidden');
         document.getElementById('displayRoomCode').textContent = state.roomCode;
         document.getElementById('displayLocalRole').textContent = state.isHost
           ? 'หมากดำ (ผู้สร้างห้อง)'
@@ -4517,7 +4468,8 @@
             timeLimitPerPlayer: state.timeLimitPerPlayer,
             blackTimeRemaining: state.blackTimeRemaining,
             whiteTimeRemaining: state.whiteTimeRemaining,
-            gameStarted: state.gameStarted
+            gameStarted: state.gameStarted,
+            blackPlayerName: state.blackPlayerName
           });
           showToast('เพื่อนเข้าห้องแล้ว! กด "▶ เริ่มเกม" เพื่อเริ่มนับเวลา', 'success');
         } else {
@@ -4543,7 +4495,33 @@
             state.blackTimeRemaining = msg.blackTimeRemaining;
             state.whiteTimeRemaining = msg.whiteTimeRemaining;
             state.gameStarted = Boolean(msg.gameStarted);
+            state.blackPlayerName = String(msg.blackPlayerName || 'ผู้เล่นดำ').slice(0, 20);
+            if (state.conn && state.conn.open) {
+              state.conn.send({ type: 'HELLO', whitePlayerName: state.whitePlayerName });
+            }
             renderGame();
+            break;
+
+          case 'HELLO':
+            state.whitePlayerName = String(msg.whitePlayerName || 'ผู้เล่นขาว').slice(0, 20);
+            if (state.conn && state.conn.open) {
+              state.conn.send({
+                type: 'NAME_SYNC',
+                blackPlayerName: state.blackPlayerName,
+                whitePlayerName: state.whitePlayerName
+              });
+            }
+            renderGame();
+            break;
+
+          case 'NAME_SYNC':
+            state.blackPlayerName = String(msg.blackPlayerName || state.blackPlayerName).slice(0, 20);
+            state.whitePlayerName = String(msg.whitePlayerName || state.whitePlayerName).slice(0, 20);
+            renderGame();
+            break;
+
+          case 'CHAT':
+            addRemoteChatMessage(msg);
             break;
 
           case 'START_GAME':
@@ -4572,22 +4550,8 @@
             showToast('เริ่มกระดานใหม่ (Rematch) — กด ▶ เริ่มเกม', 'info');
             break;
 
-          case 'HELLO':
-            state.opponentName = sanitizeName(msg.name);
-            appendChatMessage({ system: true, text: `${nameForOpponent()} เข้าห้องแล้ว` });
-            renderGame();
-            break;
-
-          case 'CHAT':
-            if (typeof msg.text === 'string' && msg.text.trim()) {
-              const txt = msg.text.slice(0, 200);
-              appendChatMessage({ name: nameForOpponent(), text: txt, self: false });
-              spawnReactionBubble(txt, nameForOpponent());
-            }
-            break;
-
           case 'REACTION':
-            spawnReactionBubble(msg.text, nameForOpponent());
+            spawnReactionBubble(msg.text);
             break;
         }
       });
@@ -4595,8 +4559,7 @@
       conn.on('close', () => {
         state.onlineConnected = false;
         updatePeerStatusUI('disconnected');
-        showToast(`${nameForOpponent()} ออกจากห้องแล้ว`, 'error');
-        appendChatMessage({ system: true, text: `${nameForOpponent()} ออกจากห้อง` });
+        showToast('คู่แข่งออกจากห้องแล้ว', 'error');
         renderGame();
       });
     }
@@ -4612,12 +4575,11 @@
       }
       state.onlineConnected = false;
       state.roomCode = '';
+      state.chatMessages = [];
+      renderOnlineChat();
       document.getElementById('onlineLobbyControls').classList.remove('hidden');
       document.getElementById('onlineActiveRoomBox').classList.add('hidden');
       document.getElementById('onlineReactionsBox').classList.add('hidden');
-      document.getElementById('onlineChatBox').classList.add('hidden');
-      document.getElementById('chatLog').innerHTML = '';
-      state.opponentName = '';
       updatePeerStatusUI('disconnected');
       if (!silent) {
         showToast('ออกจากห้องออนไลน์แล้ว', 'info');
@@ -4639,11 +4601,11 @@
       }
     }
 
-    function spawnReactionBubble(text, fromName) {
+    function spawnReactionBubble(text) {
       const overlay = document.getElementById('reactionOverlay');
       const bubble = document.createElement('div');
       bubble.className = 'reaction-bubble px-4 py-2 rounded-2xl bg-[#1f1913]/95 border border-amber-400/60 text-amber-100 font-bold text-xs sm:text-sm shadow-2xl';
-      bubble.textContent = `💬 ${fromName || 'คู่แข่ง'}: "${text}"`;
+      bubble.textContent = `💬 คู่แข่ง: "${text}"`;
       overlay.appendChild(bubble);
       audioEngine.playPassSound();
       setTimeout(() => bubble.remove(), 3500);
@@ -4654,13 +4616,10 @@
     // -------------------------------------------------------------------------
     function syncRankUI() {
       const meta = RANK_META[state.aiRank] || RANK_META['5k'];
-      const profile = aiController.profiles[state.aiRank] || aiController.profiles['5k'];
-      const effectiveVisits = profile.cap > 0 ? Math.min(profile.cap, profile.visits) : profile.visits;
       document.getElementById('aiRankSelect').value = state.aiRank;
       document.getElementById('modalRankSelect').value = state.aiRank;
       document.getElementById('rankBadge').textContent = meta.badge;
-      document.getElementById('rankDescription').textContent =
-        `KataGo Search · งบสูงสุดประมาณ ${effectiveVisits.toLocaleString()} visits หรือ ${(profile.ms / 1000).toFixed(1)} วินาทีต่อตา (แล้วแต่ถึงขีดจำกัดใดก่อน)`;
+      document.getElementById('rankDescription').textContent = meta.desc;
     }
 
     function updateClocksUI() {
@@ -4802,11 +4761,11 @@
 
       // Player Cards (Names, Captures, Active Border, Turn Tags)
       if (state.mode === 'ai') {
-        updatePlayerNameLabels();
-        
+        document.getElementById('blackPlayerName').textContent = state.playerColor === BLACK ? 'หมากดำ (คุณ)' : 'หมากดำ (AI)';
+        document.getElementById('whitePlayerName').textContent = state.playerColor === WHITE ? 'หมากขาว (คุณ)' : 'หมากขาว (AI)';
       } else {
-        updatePlayerNameLabels();
-        
+        document.getElementById('blackPlayerName').textContent = `⚫ ${state.blackPlayerName || 'ผู้เล่นดำ'}`;
+        document.getElementById('whitePlayerName').textContent = `⚪ ${state.whitePlayerName || 'ผู้เล่นขาว'}`;
       }
 
       document.getElementById('blackCaptures').textContent = state.blackCaptures;
@@ -4901,13 +4860,7 @@
       if (idx < 0) return;
 
       if (state.scoringMode) {
-        if (state.board[idx] === EMPTY || state.deadStones.has(idx)) {
-          if (state.scoreBrushColor !== null) markManualTerritoryAt(idx);
-          else if (state.board[idx] !== EMPTY) toggleDeadGroupAt(idx);
-          else showToast('เลือกสีพื้นที่ก่อนแตะจุดว่าง หรือแตะหมากเพื่อทำเครื่องหมายหมากตาย', 'info');
-        } else {
-          toggleDeadGroupAt(idx);
-        }
+        toggleDeadGroupAt(idx);
         return;
       }
 
@@ -5058,9 +5011,6 @@
     });
     document.getElementById('btnShowScoreSummary').addEventListener('click', showFinalScoreModal);
     document.getElementById('btnExitScoring').addEventListener('click', exitScoringMode);
-    document.querySelectorAll('.score-brush-btn').forEach(btn => {
-      btn.addEventListener('click', () => setScoringBrush(Number(btn.dataset.scoreBrush)));
-    });
 
     document.getElementById('btnResign').addEventListener('click', () => {
       document.getElementById('resignModal').classList.remove('hidden');
@@ -5089,6 +5039,16 @@
     });
 
     // Online 2P Buttons
+    document.getElementById('onlineChatForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('onlineChatInput');
+      sendOnlineChat(input.value);
+      input.value = '';
+      input.focus();
+    });
+    document.getElementById('onlinePlayerNameInput').value = (() => {
+      try { return localStorage.getItem('zenWeiqiPlayerName') || ''; } catch (e) { return ''; }
+    })();
     document.getElementById('btnCreateRoom').addEventListener('click', createOnlineRoom);
     document.getElementById('btnJoinRoom').addEventListener('click', () => {
       joinOnlineRoom(document.getElementById('inputJoinRoomId').value);
@@ -5112,98 +5072,10 @@
       btn.addEventListener('click', () => {
         const text = btn.dataset.react;
         if (state.conn && state.conn.open) {
-          sendChatMessage(text);
-          
+          state.conn.send({ type: 'REACTION', text });
+          showToast(`ส่งข้อความ: "${text}"`, 'info');
         }
       });
-    });
-
-    // -------------------------------------------------------------------------
-    // Player Names & Online Chat
-    // -------------------------------------------------------------------------
-    const NAME_STORAGE_KEY = 'zen_weiqi_player_name_v1';
-
-    function sanitizeName(n) {
-      return String(n || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 16);
-    }
-    function getMyName() {
-      return state.localName || 'ผู้เล่น';
-    }
-    function nameForOpponent() {
-      return state.opponentName || 'เพื่อน';
-    }
-    function nameForColor(color) {
-      if (state.mode === 'ai') {
-        return color === state.playerColor ? (state.localName || 'คุณ') : 'AI';
-      }
-      return color === state.onlineRole ? (state.localName || 'คุณ') : nameForOpponent();
-    }
-    function updatePlayerNameLabels() {
-      document.getElementById('blackPlayerName').textContent = `หมากดำ (${nameForColor(BLACK)})`;
-      document.getElementById('whitePlayerName').textContent = `หมากขาว (${nameForColor(WHITE)})`;
-    }
-
-    (function initPlayerName() {
-      try { state.localName = sanitizeName(localStorage.getItem(NAME_STORAGE_KEY)); } catch (e) {}
-      const inputs = document.querySelectorAll('.player-name-input');
-      inputs.forEach(inp => {
-        inp.value = state.localName;
-        inp.addEventListener('input', () => {
-          state.localName = sanitizeName(inp.value);
-          inputs.forEach(o => { if (o !== inp) o.value = inp.value; });
-          try { localStorage.setItem(NAME_STORAGE_KEY, state.localName); } catch (e) {}
-          renderGame();
-        });
-      });
-    })();
-
-    function appendChatMessage({ name, text, self, system }) {
-      const log = document.getElementById('chatLog');
-      const row = document.createElement('div');
-      if (system) {
-        row.className = 'text-center text-[11px] italic text-amber-200/45';
-        row.textContent = text;
-      } else {
-        row.className = self ? 'text-right' : 'text-left';
-        const bubble = document.createElement('div');
-        bubble.className = 'inline-block max-w-[85%] px-2.5 py-1 rounded-xl text-left break-words ' +
-          (self ? 'bg-amber-600/35 border border-amber-500/40 text-amber-50' : 'bg-[#2a2119] border border-stone-600/50 text-stone-100');
-        const who = document.createElement('div');
-        who.className = 'text-[10px] font-bold ' + (self ? 'text-amber-300' : 'text-emerald-300');
-        who.textContent = name;
-        const body = document.createElement('div');
-        body.textContent = text;
-        bubble.appendChild(who);
-        bubble.appendChild(body);
-        row.appendChild(bubble);
-      }
-      log.appendChild(row);
-      while (log.children.length > 100) log.removeChild(log.firstChild);
-      log.scrollTop = log.scrollHeight;
-    }
-
-    function sendChatMessage(rawText) {
-      const text = String(rawText || '').trim().slice(0, 200);
-      if (!text) return;
-      if (!state.conn || !state.conn.open) {
-        showToast('ยังไม่ได้เชื่อมต่อกับคู่แข่ง', 'error');
-        return;
-      }
-      state.conn.send({ type: 'CHAT', name: getMyName(), text });
-      appendChatMessage({ name: getMyName(), text, self: true });
-    }
-
-    document.getElementById('btnSendChat').addEventListener('click', () => {
-      const inp = document.getElementById('chatInput');
-      sendChatMessage(inp.value);
-      inp.value = '';
-      inp.focus();
-    });
-    document.getElementById('chatInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.isComposing) {
-        e.preventDefault();
-        document.getElementById('btnSendChat').click();
-      }
     });
 
     // =========================================================================
@@ -5224,12 +5096,7 @@
       if (roomParam) {
         switchModeTab('online');
         document.getElementById('inputJoinRoomId').value = roomParam.toUpperCase();
-        if (state.localName) {
-          joinOnlineRoom(roomParam);
-        } else {
-          showToast('ใส่ชื่อของคุณ แล้วกด "เข้าร่วม" เพื่อเข้าห้อง', 'info');
-          document.getElementById('playerNameInputOnline').focus();
-        }
+        joinOnlineRoom(roomParam);
       }
     });
   </script>

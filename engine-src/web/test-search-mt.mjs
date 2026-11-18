@@ -19,6 +19,11 @@ const fail = (m) => { console.error('FAIL:', m); process.exit(1); };
 const createKata = require(kataevalJs);
 const M = await createKata();
 
+// A pthread build must expose shared wasm memory. This checks the compiled runtime,
+// rather than looking for names that Emscripten may rename or omit in generated JS.
+if (typeof SharedArrayBuffer !== 'function' || !(M.HEAP32.buffer instanceof SharedArrayBuffer))
+  fail('threaded build did not initialize shared WebAssembly memory');
+
 // Every symbol the worker (kata-worker.js) ccalls must be present in the MT binary.
 const need = [
   '_kgeLoad', '_kgeSetForceCpu', '_kgeSetFp16', '_kgeBackendIsGpu', '_kgeModelVersion',
@@ -39,5 +44,5 @@ const rc = M.ccall('kgePollAll', 'number',
 if (rc !== 0) fail('kgePollAll with no engine should return 0, got ' + rc);
 M.ccall('kgeSetStrength', null, ['number', 'number', 'number'], [80, 0.35, 1.4]);  // pure setter, always safe
 
-console.log('PASS  kataeval-mt: ' + need.length + ' exports present; kgePollAll null-path + strength ABI callable');
+console.log('PASS  kataeval-mt: shared WebAssembly memory; ' + need.length + ' exports present; kgePollAll null-path + strength ABI callable');
 process.exit(0);

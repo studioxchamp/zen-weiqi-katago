@@ -1,7 +1,9 @@
-name: Build MeChampZ GO KataGo WASM
+name: Build and Validate Zen Weiqi KataGo WASM
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [ main ]
   push:
     branches: [ main, master ]
 
@@ -11,7 +13,7 @@ permissions:
 jobs:
   build-browser-engine:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - name: Checkout package
         uses: actions/checkout@v4
@@ -28,16 +30,75 @@ jobs:
           "$HOME/emsdk/emsdk" activate latest
           source "$HOME/emsdk/emsdk_env.sh"
           emcc --version
+          mkdir -p .validation
+          {
+            echo '=== Emscripten SDK git revision ==='
+            git -C "$HOME/emsdk" rev-parse HEAD
+            echo '=== Compiler version ==='
+            emcc --version
+            echo '=== Build command and effective pthread flags ==='
+            echo 'MT=1 KATA_PTHREAD_POOL_SIZE=9 bash scripts/build-eval.sh'
+            echo 'Compile: -pthread -DKGE_THREADS'
+            echo 'Link: -pthread -sPTHREAD_POOL_SIZE=9 -sINITIAL_MEMORY=512MB -sASYNCIFY -sALLOW_MEMORY_GROWTH=1 -sMODULARIZE=1 -sEXPORT_NAME=createKata'
+            echo '=== Exact build-eval.sh flags and exports ==='
+            sed -n '1,100p' engine-src/scripts/build-eval.sh
+            echo '=== Browser module initialization ==='
+            grep -nE 'mainScriptUrlOrBlob|wasmBinary|createKata|new Blob' site/katago/kata-worker.js
+          } | tee .validation/build-info.txt
 
       - name: Build threaded KataGo and copy browser assets
         run: |
           source "$HOME/emsdk/emsdk_env.sh"
           bash build-katago.sh
 
-      - name: Upload Netlify publish folder
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check threaded build exports and files
+        run: |
+          test -s site/katago/kataeval-mt.js
+          test -s site/katago/kataeval-mt.wasm
+          test -s site/katago/model-b10c128.bin.gz
+          node --input-type=module -e "import {readFileSync,statSync} from 'node:fs'; const p='site/katago/kataeval-mt.wasm'; const w=readFileSync(p); if (w[0]!==0||w[1]!==97||w[2]!==115||w[3]!==109) throw new Error('invalid WASM magic'); await WebAssembly.compile(w); console.log('PASS compiled threaded WASM:',statSync(p).size,'bytes');"
+          node engine-src/web/test-search-mt.mjs
+
+      - name: Install Chromium test runner
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Test model, eval, search, cancel, and game move in Chromium
+        run: node engine-src/web/test-browser-mt.mjs
+
+      - name: Upload generated build diagnostics on failure
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: mechampz-go-katago-site
+          name: katago-failed-build-diagnostics
+          path: |
+            .validation/build-info.txt
+            site/katago/kataeval-mt.js
+            site/katago/kataeval-mt.wasm
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload tested Netlify publish folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: zen-weiqi-netlify-site-tested
           path: site/
           if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zen-weiqi-katago-validation-report
+          path: |
+            .validation/kata-mt-browser.json
+            .validation/build-info.txt
+          if-no-files-found: ignore
           retention-days: 14
