@@ -57,15 +57,24 @@ try {
     if (!wasmResponse.ok || !jsResponse.ok) throw new Error(`engine assets HTTP ${wasmResponse.status}/${jsResponse.status}`);
     const wasmBinary = await wasmResponse.arrayBuffer();
     const jsText = await jsResponse.text();
+    const diagByRequest = new Map();
     const worker = new Worker('/katago/kata-worker.js');
     const diagnostics = [];
+    const unmatchedResponses = [];
     const pending = new Map();
     let progressListener = null;
     let progressReject = null;
     worker.onmessage = ({ data }) => {
-      if (data.diag) diagnostics.push(data.diag);
+      if (data.diag) {
+        diagnostics.push({ requestId: data.requestId ?? null, message: data.diag, at: performance.now() });
+        if (data.requestId != null) diagByRequest.set(data.requestId, data.diag);
+      }
       if (data.progress && progressListener) { const fn = progressListener; progressListener = null; progressReject = null; fn(data); }
-      if (data.id && pending.has(data.id)) {
+      if (data.id != null) {
+        if (!pending.has(data.id)) {
+          unmatchedResponses.push({ id: data.id, ok: data.ok, error: data.error || null });
+          return;
+        }
         const { resolve, reject, timer } = pending.get(data.id);
         clearTimeout(timer); pending.delete(data.id);
         data.ok ? resolve(data) : reject(new Error(data.error || `worker request ${data.id} failed`));
@@ -78,15 +87,32 @@ try {
       if (progressReject) progressReject(error);
     };
     const send = (id, msg, transfer = []) => new Promise((resolve, reject) => {
-      const timer = setTimeout(() => { pending.delete(id); reject(new Error(`worker request ${id} timed out`)); }, 180000);
+      // The worker has separate 120s runtime, 70s model, 120s kgeLoad and
+      // 90s eval guards. Keep the outer init deadline above their combined
+      // maximum so a staged worker diagnostic wins over a generic timeout.
+      const timeoutMs = ({ init: 320000, eval: 95000, search: 155000, cancel: 30000, strength: 15000 })[msg.type] || 30000;
+      const timer = setTimeout(() => {
+        pending.delete(id);
+        const lastStage = diagByRequest.get(id) || 'no worker diagnostic received';
+        reject(new Error(`worker request ${id} (${msg.type}) timed out after ${timeoutMs} ms; last worker stage: ${lastStage}`));
+      }, timeoutMs);
       pending.set(id, { resolve, reject, timer }); worker.postMessage({ id, ...msg }, transfer);
     });
     try {
       const init = await send(1, { type: 'init', netFile: 'model-b10c128.bin.gz', boardSize: 19, wasmBinary, jsText, forceCpu: true, fp16: false, optimism: 0 }, [wasmBinary]);
-      if (!diagnostics.includes('createKata: runtime + thread pool ready')) throw new Error('Emscripten thread pool did not report ready');
+      if (init.id !== 1) throw new Error(`init response ID mismatch: expected 1, received ${init.id}`);
+      const initDiags = diagnostics.filter((d) => d.requestId === 1).map((d) => d.message);
+      for (const stage of ['init: Emscripten runtime and pthread pool ready', 'model: ', 'kgeLoad: complete;']) {
+        if (!initDiags.some((d) => d.includes(stage))) throw new Error(`init response arrived without diagnostic stage: ${stage}; saw ${JSON.stringify(initDiags)}`);
+      }
+      if (!initDiags.some((d) => d.startsWith('model: downloaded ') || d.startsWith('model: cache hit ('))) {
+        throw new Error(`model was not confirmed downloaded or loaded from cache: ${JSON.stringify(initDiags)}`);
+      }
       const evaluated = await send(2, { type: 'eval', moves: [], toPlay: 1, komi: 6.5, owner: false });
+      if (evaluated.id !== 2) throw new Error(`eval response ID mismatch: expected 2, received ${evaluated.id}`);
       if (evaluated.policy.length !== 362 || evaluated.value.length !== 5 || !Array.from(evaluated.value).every(Number.isFinite)) throw new Error('invalid kgeEvalSeqKata output');
       const searched = await send(3, { type: 'search', moves: [], toPlay: 1, komi: 6.5, visits: 24, ms: 1500, threads: 2, noPonder: true });
+      if (searched.id !== 3) throw new Error(`search response ID mismatch: expected 3, received ${searched.id}`);
       if (!Number.isInteger(searched.best) || searched.best < -1 || searched.best >= 361 || searched.nv < 1) throw new Error('search did not return a legal board point/pass');
 
       const started = new Promise((resolve, reject) => { progressListener = resolve; progressReject = reject; });
@@ -95,9 +121,13 @@ try {
       if (progress.done) throw new Error('search completed before cancel could be exercised');
       const cancelledSearch = send(5, { type: 'cancel' });
       const [searchEnd, cancelAck] = await Promise.all([longSearch, cancelledSearch]);
+      if (searchEnd.id !== 4 || cancelAck.id !== 5) throw new Error(`search/cancel response ID mismatch: ${searchEnd.id}/${cancelAck.id}`);
       if (!searchEnd.superseded || !cancelAck.ok) throw new Error('cancel did not supersede the active search');
       worker.terminate();
-      return { backend: init.backend, modelVersion: init.version, modelHttpStatus: model.status, wasmBytes: wasmBinary.byteLength, diagnostics, threadPoolReady: true, evalPolicyLength: evaluated.policy.length, evalValue: Array.from(evaluated.value), best: searched.best, visits: searched.nv, cancelSuperseded: searchEnd.superseded };
+      const evalDiags = diagnostics.filter((d) => d.requestId === 2).map((d) => d.message);
+      if (!evalDiags.some((d) => d.includes('eval: kgeEvalSeqKata complete'))) throw new Error(`eval response arrived without completion diagnostic: ${JSON.stringify(evalDiags)}`);
+      if (unmatchedResponses.length) throw new Error(`worker sent response IDs with no matching request: ${JSON.stringify(unmatchedResponses)}`);
+      return { backend: init.backend, modelVersion: init.version, modelHttpStatus: model.status, wasmBytes: wasmBinary.byteLength, diagnostics, threadPoolReady: true, responseIds: [init.id, evaluated.id, searched.id, searchEnd.id, cancelAck.id], evalPolicyLength: evaluated.policy.length, evalValue: Array.from(evaluated.value), best: searched.best, visits: searched.nv, cancelSuperseded: searchEnd.superseded };
     } catch (error) {
       worker.terminate();
       throw error;

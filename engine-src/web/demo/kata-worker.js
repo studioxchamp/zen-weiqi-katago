@@ -8,23 +8,78 @@
 importScripts('kataeval-mt.js');
 
 // Surface errors that would otherwise be swallowed (pthread pool spawn, rejections).
-const diag = (m) => { try { postMessage({ diag: m }); } catch (_) {} };
+const diag = (m, requestId) => { try { postMessage({ diag: m, requestId }); } catch (_) {} };
+const reply = (id, data, transfer = []) => postMessage({ ...data, id }, transfer);
 self.onerror = (e) => diag('worker.onerror: ' + ((e && e.message) || e));
 self.addEventListener('unhandledrejection', (e) => diag('unhandledrejection: ' + ((e.reason && (e.reason.stack || e.reason.message)) || e.reason)));
 
+// Recent Emscripten pthread output starts workers from `_scriptName` and does not
+// consume Module.mainScriptUrlOrBlob. Since this file importScripts() the factory,
+// `_scriptName` is this wrapper URL. Redirect only that URL to the fetched module JS;
+// Emscripten's generated module auto-starts when Worker.name is "em-pthread".
+let pthreadBootstrapUrl = null;
+function installPthreadBootstrap(jsText, requestId) {
+  if (pthreadBootstrapUrl) return;
+  pthreadBootstrapUrl = URL.createObjectURL(new Blob([jsText], { type: 'text/javascript' }));
+  const NativeWorker = globalThis.Worker;
+  globalThis.Worker = new Proxy(NativeWorker, {
+    construct(target, args) {
+      let requestedUrl = '';
+      try { requestedUrl = new URL(args[0], self.location.href).href; } catch (_) {}
+      if (requestedUrl === self.location.href) {
+        args[0] = pthreadBootstrapUrl;
+        diag('pthread: redirected Emscripten worker bootstrap to kataeval-mt.js blob', requestId);
+      }
+      return Reflect.construct(target, args, target);
+    },
+  });
+}
+
 const MAXMV = 2048, PVCAP = 32, MAXCAND = 8;   // MAXMV matches the page (analyze.html) so long games aren't truncated
 let M = null, N = 19, ready = false;
+let fatalEngineError = null;
+
+function withStageTimeout(promise, stage, timeoutMs, requestId) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error(`${stage} timed out after ${timeoutMs} ms`);
+      fatalEngineError = error.message;
+      diag(`timeout: ${error.message}; worker must be restarted`, requestId);
+      reject(error);
+    }, timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 
 // Net caching (Cache API), shared with the page — a net downloads once across both
 // contexts and survives refreshes. The page may have already cached it on load.
-async function cachedNet(url) {
+async function cachedNet(url, requestId) {
+  diag('model: checking cache', requestId);
   let cache = null;
   try { cache = await caches.open('saigo-nets-v1'); } catch (_) { cache = null; }
-  if (cache) { const hit = await cache.match(url); if (hit) return await hit.arrayBuffer(); }
-  const res = await fetch(url);
+  if (cache) {
+    const hit = await cache.match(url);
+    if (hit) {
+      const bytes = await hit.arrayBuffer();
+      diag('model: cache hit (' + bytes.byteLength + ' bytes)', requestId);
+      return bytes;
+    }
+  }
+  diag('model: fetching ' + url, requestId);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60000);
+  let res;
+  try { res = await fetch(url, { signal: controller.signal }); }
+  catch (err) {
+    if (controller.signal.aborted) throw new Error('model fetch timed out after 60000 ms: ' + url);
+    throw err;
+  } finally { clearTimeout(timer); }
   if (!res.ok) throw new Error('fetch ' + url + ' -> ' + res.status);
   if (cache) { try { await cache.put(url, res.clone()); } catch (_) {} }
-  return await res.arrayBuffer();
+  const bytes = await res.arrayBuffer();
+  diag('model: downloaded ' + bytes.byteLength + ' bytes', requestId);
+  return bytes;
 }
 let mlPtr, mcPtr;                                      // move-list buffers (persistent heap, written in place)
 let scalPtr, valPtr, pvPtr, pvVisPtr;                 // kgePollAll: 7 ints, 8 floats, pv, pvVisits
@@ -32,32 +87,29 @@ let candLocPtr, candVisPtr, candWrPtr, candScPtr, candPrPtr, candLcbPtr, candRad
 let ownPtr;                                           // tree-ownership buffer
 let bPtr, pPtr, vPtr, oPtr;                           // analysis (kgeEvalSeqKata) buffers
 
-async function init(netFile, boardSize, wasmBinary, jsText, forceCpu, fp16, optimism) {
-  // The module is loaded via importScripts INTO this worker, so emscripten's
-  // _scriptName would point at kata-worker.js — it would then spawn pthread workers
-  // as new Worker('kata-worker.js') (re-running THIS file) instead of the pthread
-  // bootstrap. mainScriptUrlOrBlob tells it the real module URL so pthread + wasm
-  // loading resolve correctly.
-  // Spawn pthread workers from a blob: URL (built from the page-fetched JS text), not
-  // the https URL — a nested new Worker(https-url) fails over a self-signed/overridden
-  // cert. The blob is same-origin and in-memory, so no cert is involved.
-  const moduleBlob = new Blob([jsText], { type: 'text/javascript' });
-  diag('createKata: spawning thread pool…');
-  M = await createKata({
-    // The page fetched the wasm for us (a worker's fetch() also fails over the cert);
-    // use those bytes directly so the worker never fetches the wasm.
+async function init(netFile, boardSize, wasmBinary, jsText, forceCpu, fp16, optimism, requestId) {
+  diag('init: installing pthread bootstrap redirect', requestId);
+  installPthreadBootstrap(jsText, requestId);
+  diag('init: creating Emscripten runtime and pthread pool', requestId);
+  M = await withStageTimeout(createKata({
+    // Use the page-fetched WASM bytes; pthread worker JS URLs are redirected above.
     wasmBinary,
-    mainScriptUrlOrBlob: moduleBlob,
     locateFile: (p) => new URL(p, self.location.href).href,
-  });
-  diag('createKata: runtime + thread pool ready');
+  }), 'init runtime and pthread pool', 120000, requestId);
+  diag('init: Emscripten runtime and pthread pool ready', requestId);
   N = boardSize;
   if (forceCpu) M.ccall('kgeSetForceCpu', null, ['number'], [1]);  // ?cpu — Eigen fallback
   if (fp16) M.ccall('kgeSetFp16', null, ['number'], [1]);          // ?fp16 — opt-in fp16 (~2x, fp16-stable nets only)
   if (optimism > 0) M.ccall('kgeSetPolicyOptimism', null, ['number'], [optimism]);  // ?optimism — v>=12 policy-optimism blend
-  M.FS.writeFile('/model.bin.gz', new Uint8Array(await cachedNet(netFile)));
-  const ok = await M.ccall('kgeLoad', 'number', ['string', 'number'], ['/model.bin.gz', N], { async: true });
+  const modelBytes = await withStageTimeout(cachedNet(netFile, requestId), 'model load', 70000, requestId);
+  diag('model: writing ' + modelBytes.byteLength + ' bytes to MEMFS', requestId);
+  M.FS.writeFile('/model.bin.gz', new Uint8Array(modelBytes));
+  diag('kgeLoad: starting model decode and backend setup', requestId);
+  const ok = await withStageTimeout(
+    M.ccall('kgeLoad', 'number', ['string', 'number'], ['/model.bin.gz', N], { async: true }),
+    'kgeLoad', 120000, requestId);
   if (!ok) throw new Error('kgeLoad: ' + M.ccall('kgeError', 'string', [], []));
+  diag('kgeLoad: complete; threaded NNEvaluator initializes lazily on first eval/search', requestId);
   mlPtr = M._malloc(MAXMV * 4); mcPtr = M._malloc(MAXMV * 4);
   scalPtr = M._malloc(7 * 4); valPtr = M._malloc(8 * 4);
   pvPtr = M._malloc(PVCAP * 4); pvVisPtr = M._malloc(PVCAP * 4);
@@ -69,6 +121,7 @@ async function init(netFile, boardSize, wasmBinary, jsText, forceCpu, fp16, opti
   ownPtr = M._malloc(HW * 4);
   ready = true;
   const backend = M.ccall('kgeBackendIsGpu', 'number', [], []) ? 'WebGPU' : 'CPU (Eigen)';
+  diag('init: complete; returning ready response', requestId);
   return { backend, version: M.ccall('kgeModelVersion', 'number', [], []) };
 }
 
@@ -171,14 +224,17 @@ async function search(req, token) {
 
 // Instant per-move analysis (raw NN policy/value/ownership) — same NNEvaluator-backed
 // net as search, so it's one net load and the analysis warms the cache search reuses.
-async function evalPos(req) {
+async function evalPos(req, requestId) {
   if (!ready) throw new Error('engine not initialized');
   const n = writeMoves(req.moves || []);
   const HW = N * N;
-  const ok = await M.ccall('kgeEvalSeqKata', 'number',
+  diag('eval: entering kgeEvalSeqKata (first call may initialize the lazy NNEvaluator)', requestId);
+  const ok = await withStageTimeout(M.ccall('kgeEvalSeqKata', 'number',
     ['number','number','number','number','number','number','number','number','number'],
-    [mlPtr, mcPtr, n, req.toPlay, req.komi ?? 7.5, bPtr, pPtr, vPtr, req.owner ? oPtr : 0], { async: true });
+    [mlPtr, mcPtr, n, req.toPlay, req.komi ?? 7.5, bPtr, pPtr, vPtr, req.owner ? oPtr : 0], { async: true }),
+    'eval kgeEvalSeqKata', 90000, requestId);
   if (!ok) throw new Error('kgeEvalSeqKata: ' + M.ccall('kgeError', 'string', [], []));
+  diag('eval: kgeEvalSeqKata complete', requestId);
   // Copy HEAP slices into standalone buffers we can transfer back to the page.
   return {
     board: M.HEAP32.slice(bPtr >> 2, (bPtr >> 2) + HW),
@@ -191,29 +247,32 @@ async function evalPos(req) {
 async function handleMessage(e) {
   const { id, type } = e.data;
   try {
-    if (type === 'init') postMessage({ id, ok: true, ...(await init(e.data.netFile, e.data.boardSize, e.data.wasmBinary, e.data.jsText, e.data.forceCpu, e.data.fp16, e.data.optimism)) });
+    diag(`request: received ${type} id=${id}`, id);
+    if (fatalEngineError) throw new Error(`engine worker is unusable after ${fatalEngineError}; restart it`);
+    if (type === 'init') reply(id, { ok: true, ...(await init(e.data.netFile, e.data.boardSize, e.data.wasmBinary, e.data.jsText, e.data.forceCpu, e.data.fp16, e.data.optimism, id)) });
     else if (type === 'eval') {          // pollToken already bumped in onmessage (supersede)
-      const r = await evalPos(e.data);
+      const r = await evalPos(e.data, id);
       const xfer = [r.board.buffer, r.policy.buffer, r.value.buffer]; if (r.owner) xfer.push(r.owner.buffer);
-      postMessage({ id, ok: true, ...r }, xfer);
+      reply(id, { ok: true, ...r }, xfer);
     }
     else if (type === 'search') {
       const token = pollToken;           // onmessage already bumped it; capture the current value
       const r = await search(e.data, token);
-      postMessage({ id, ok: true, superseded: r === null, ...(r || {}) });
+      reply(id, { ok: true, superseded: r === null, ...(r || {}) });
     }
     else if (type === 'strength') {      // limit playing strength for the next search
       M.ccall('kgeSetStrength', null, ['number','number','number'],
         [e.data.visits | 0, e.data.temp || 0, e.data.policyTemp || 1]);
-      postMessage({ id, ok: true });
+      reply(id, { ok: true });
     }
     else if (type === 'cancel') {
       M.ccall('kgeStopSearch', 'number', [], []);
-      postMessage({ id, ok: true });
+      reply(id, { ok: true });
     }
     else throw new Error('unknown message type: ' + type);
   } catch (err) {
-    postMessage({ id, ok: false, error: String((err && err.message) || err) });
+    diag(`request: ${type} id=${id} failed: ${String((err && err.message) || err)}`, id);
+    reply(id, { ok: false, error: String((err && err.message) || err) });
   }
 }
 
