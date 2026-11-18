@@ -15,7 +15,9 @@ const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 
 const server = createServer(async (req, res) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  // Match the production Netlify site/_headers policy so external CDN assets
+  // behave the same in Chromium validation as they do on the deployed site.
+  res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
   res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
   res.setHeader('Cache-Control', 'no-store');
   try {
