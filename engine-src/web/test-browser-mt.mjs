@@ -139,7 +139,7 @@ try {
     }
   });
   const tf3Availability = await enginePage.evaluate(async () => {
-    const url = 'https://media.katagotraining.org/uploaded/networks/models/kata1/kata1-tf3-b11c768-s12382M-d6533M.bin.gz';
+    const url = 'https://github.com/studioxchamp/zen-weiqi-katago/releases/download/kata1-tf3-b11c768-s12382M-d6533M/model-tf3-b11c768.bin.gz';
     try {
       const response = await fetch(url, { method: 'HEAD', mode: 'cors' });
       return {
