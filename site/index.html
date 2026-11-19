@@ -904,11 +904,14 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-2.5">
-        <button id="btnResumeFromScore" type="button" class="zen-btn py-2.5 px-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-100 text-xs sm:text-sm font-semibold">
+      <div class="grid grid-cols-3 gap-2">
+        <button id="btnResumeFromScore" type="button" class="zen-btn py-2.5 px-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-100 text-xs sm:text-sm font-semibold">
           ปิดหน้าต่าง
         </button>
-        <button id="btnNewGameFromScore" type="button" class="zen-btn py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs sm:text-sm font-bold">
+        <button id="btnReviewFromScore" type="button" class="zen-btn py-2.5 px-2 rounded-xl bg-amber-700 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold">
+          ⏮ ดูย้อนหลัง
+        </button>
+        <button id="btnNewGameFromScore" type="button" class="zen-btn py-2.5 px-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs sm:text-sm font-bold">
           เริ่มเกมใหม่
         </button>
       </div>
@@ -5243,6 +5246,7 @@
     document.getElementById('btnReviewNext').addEventListener('click', () => setReviewMove((reviewSession?.index || 0) + 1));
     document.getElementById('btnReviewLast').addEventListener('click', () => setReviewMove((reviewSession?.frames.length || 1) - 1));
     document.getElementById('btnCloseReview').addEventListener('click', closeGameReview);
+    document.getElementById('btnReviewFromScore').addEventListener('click', openGameReview);
     document.getElementById('reviewMoveSlider').addEventListener('input', (e) => setReviewMove(e.target.value));
 
     document.getElementById('btnImportSgf').addEventListener('click', () => {
