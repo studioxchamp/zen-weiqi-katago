@@ -138,6 +138,23 @@ try {
       throw error;
     }
   });
+  const tf3Availability = await enginePage.evaluate(async () => {
+    const url = 'https://media.katagotraining.org/uploaded/networks/models/kata1/kata1-tf3-b11c768-s12382M-d6533M.bin.gz';
+    try {
+      const response = await fetch(url, { method: 'HEAD', mode: 'cors' });
+      return {
+        url,
+        headStatus: response.status,
+        ok: response.ok,
+        contentLength: response.headers.get('content-length'),
+        note: response.ok ? 'Remote TF3 URL is reachable with browser CORS' : 'Remote TF3 server returned a non-success status; application should fall back to B10C128'
+      };
+    } catch (error) {
+      return { url, ok: false, error: String(error), note: 'Browser CORS/network preflight failed; application should fall back to B10C128' };
+    }
+  });
+  results.checks.tf3RemoteAsset = tf3Availability;
+
   const workerWaitDeadline = Date.now() + 10000;
   while (workerTargets.length < workerBaseline + 10 && Date.now() < workerWaitDeadline)
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -188,7 +205,47 @@ try {
   const moveHistory = await gamePage.locator('#moveHistoryBox').innerText();
   assert(!/ใช้ AI สำรอง|ไม่พร้อม|ขัดข้อง/.test(gameStatus), `page fell back instead of using KataGo: ${gameStatus}`);
   assert(moveHistory.trim() !== 'ยังไม่มีการวางหมาก...', 'AI move was not recorded in the game');
-  results.checks.game = { engineStatus: gameStatus.trim(), moveHistory: moveHistory.trim() };
+
+  // Finish the game and verify the replay timeline + portable SGF download.
+  await gamePage.locator('#btnResign').click();
+  await gamePage.locator('#btnConfirmResign').click();
+  await gamePage.waitForFunction(() => {
+    const el = document.querySelector('#postGameReviewActions');
+    return !!el && !el.classList.contains('hidden');
+  }, { timeout: 10000 });
+
+  const downloadPromise = gamePage.waitForEvent('download');
+  await gamePage.locator('#btnExportSgfAfterGame').click();
+  const sgfDownload = await downloadPromise;
+  const sgfPath = await sgfDownload.path();
+  assert(sgfPath, 'SGF download did not produce a local file');
+  const sgfText = await readFile(sgfPath, 'utf8');
+  assert(sgfText.startsWith('(;GM[1]FF[4]'), 'exported SGF root metadata is missing');
+  assert(sgfText.includes('PB[') && sgfText.includes('PW['), 'exported SGF player names are missing');
+  assert(sgfText.includes(';B[') || sgfText.includes(';W['), 'exported SGF contains no move nodes');
+
+  await gamePage.locator('#btnOpenReview').click();
+  await gamePage.waitForFunction(() => {
+    const el = document.querySelector('#reviewControls');
+    return !!el && !el.classList.contains('hidden');
+  }, { timeout: 10000 });
+  const maxReviewMove = Number(await gamePage.locator('#reviewMoveSlider').getAttribute('max'));
+  assert(maxReviewMove >= 1, `review timeline should contain at least one move, got max=${maxReviewMove}`);
+  await gamePage.locator('#btnReviewLast').click();
+  assert((await gamePage.locator('#reviewMoveLabel').textContent()).includes(`/${maxReviewMove}`), 'review did not reach the final move');
+  await gamePage.locator('#btnReviewFirst').click();
+  assert((await gamePage.locator('#reviewMoveLabel').textContent()).includes('ตา 0'), 'review did not return to the initial board');
+  await gamePage.locator('#btnCloseReview').click();
+  assert(await gamePage.locator('#postGameReviewActions').isVisible(), 'post-game review actions did not return after closing review');
+
+  results.checks.game = {
+    engineStatus: gameStatus.trim(),
+    moveHistory: moveHistory.trim(),
+    sgfDownload: sgfDownload.suggestedFilename(),
+    sgfHasMoves: true,
+    reviewFrameCount: maxReviewMove + 1,
+    reviewReachedInitialAndFinal: true
+  };
   assert.deepEqual(results.errors, [], results.errors.join('\n'));
   results.finishedAt = new Date().toISOString();
   results.outcome = 'PASS';
