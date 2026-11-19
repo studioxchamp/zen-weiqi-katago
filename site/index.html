@@ -305,6 +305,32 @@
         <span>คลิก/แตะจุดตัดเพื่อวางหมาก • วางเสร็จสลับเวลานับฝ่ายตรงข้ามทันที</span>
         <span id="lastMoveCoordDisplay" class="font-mono text-amber-300/80"></span>
       </div>
+
+      <div id="postGameReviewActions" class="hidden w-full mt-2 zen-panel rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
+        <div class="text-xs text-amber-100/85">
+          <strong>จบเกมแล้ว</strong>
+          <span class="text-amber-200/60">— ดูหมากย้อนหลังหรือบันทึกไฟล์ SGF</span>
+        </div>
+        <div class="flex gap-2">
+          <button id="btnOpenReview" type="button" class="zen-btn px-3 py-2 rounded-lg bg-amber-700 hover:bg-amber-600 text-white text-xs font-bold">⏮ ดูหมากย้อนหลัง</button>
+          <button id="btnExportSgfAfterGame" type="button" class="zen-btn px-3 py-2 rounded-lg bg-emerald-900/60 hover:bg-emerald-800/70 border border-emerald-500/40 text-emerald-200 text-xs font-bold">📥 ดาวน์โหลด SGF</button>
+        </div>
+      </div>
+
+      <div id="reviewControls" class="hidden w-full mt-2 zen-panel rounded-xl p-3 space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="text-xs font-bold text-amber-100">โหมดทบทวนหมาก</div>
+          <div id="reviewMoveLabel" class="text-xs font-mono text-amber-300">เริ่มต้น</div>
+        </div>
+        <input id="reviewMoveSlider" type="range" min="0" max="0" value="0" step="1" class="w-full accent-amber-500" aria-label="เลือกตาที่ต้องการทบทวน" />
+        <div class="grid grid-cols-5 gap-1.5">
+          <button id="btnReviewFirst" type="button" class="zen-btn py-2 rounded-lg bg-[#2f261e] border border-amber-800/40 text-amber-100 text-xs">|◀</button>
+          <button id="btnReviewPrev" type="button" class="zen-btn py-2 rounded-lg bg-[#2f261e] border border-amber-800/40 text-amber-100 text-xs">◀ ก่อนหน้า</button>
+          <button id="btnReviewNext" type="button" class="zen-btn py-2 rounded-lg bg-[#2f261e] border border-amber-800/40 text-amber-100 text-xs">ถัดไป ▶</button>
+          <button id="btnReviewLast" type="button" class="zen-btn py-2 rounded-lg bg-[#2f261e] border border-amber-800/40 text-amber-100 text-xs">▶|</button>
+          <button id="btnCloseReview" type="button" class="zen-btn py-2 rounded-lg bg-rose-950/70 border border-rose-500/30 text-rose-200 text-xs">ปิด</button>
+        </div>
+      </div>
     </div>
 
     <!-- Right Sidebar: Mode Switcher, Player Clocks & Captures, AI/Online Panel, Save/Load, Controls -->
@@ -405,7 +431,14 @@
           <option value="1k">1 คิว (ใกล้ดั้ง) — บุกทำลายพื้นที่และเล่นโค</option>
           <option value="1d">1 ดั้ง (ระดับสูง) — วิเคราะห์เชิงลึกมาตรฐาน</option>
           <option value="2d">2 ดั้ง (ยอดฝีมือ) — อ่านชิโจขั้นบันได & RAVE เชิงลึก</option>
-          <option value="3d">3 ดั้ง (ระดับอาจารย์) — อ่านเป็นตาย 2 ห้อง & MCTS-RAVE ขั้นสูง</option>
+          <option value="3d">3 ดั้ง — โปรไฟล์สูงสุดเดิม</option>
+            <option value="4d">4 ดั้ง (ระดับสูง) — เริ่มเข้าสู่ระดับยอดฝีมือ</option>
+            <option value="5d">5 ดั้ง (ยอดฝีมือ) — โปรไฟล์ค้นหาขั้นสูง</option>
+            <option value="6d">6 ดั้ง (ยอดฝีมือสูง) — ค้นหาเข้มข้น</option>
+            <option value="7d">7 ดั้ง (ระดับแข่งขัน) — ใช้งบค้นหาสูง</option>
+            <option value="8d">8 ดั้ง (ระดับสูงมาก) — ใช้งบค้นหาสูงมาก</option>
+            <option value="pro">Pro (ทดลอง) — กำลังค้นหาสูงสุด</option>
+            <option value="pro+">Pro Max (ทดลอง) — ใช้งบสูงสุดตามอุปกรณ์</option>
         </select>
 
         <p id="rankDescription" class="text-[11px] sm:text-xs text-amber-200/65 leading-relaxed">
@@ -690,7 +723,14 @@
             <option value="1k">1 คิว (ใกล้ดั้ง) — บุกทำลายพื้นที่และเล่นโค</option>
             <option value="1d">1 ดั้ง (ระดับสูง) — วิเคราะห์เชิงลึกมาตรฐาน</option>
             <option value="2d">2 ดั้ง (ยอดฝีมือ) — อ่านชิโจขั้นบันได & RAVE เชิงลึก</option>
-            <option value="3d">3 ดั้ง (ระดับอาจารย์) — อ่านเป็นตาย 2 ห้อง & MCTS-RAVE ขั้นสูง</option>
+            <option value="3d">3 ดั้ง — โปรไฟล์สูงสุดเดิม</option>
+            <option value="4d">4 ดั้ง (ระดับสูง) — เริ่มเข้าสู่ระดับยอดฝีมือ</option>
+            <option value="5d">5 ดั้ง (ยอดฝีมือ) — โปรไฟล์ค้นหาขั้นสูง</option>
+            <option value="6d">6 ดั้ง (ยอดฝีมือสูง) — ค้นหาเข้มข้น</option>
+            <option value="7d">7 ดั้ง (ระดับแข่งขัน) — ใช้งบค้นหาสูง</option>
+            <option value="8d">8 ดั้ง (ระดับสูงมาก) — ใช้งบค้นหาสูงมาก</option>
+            <option value="pro">Pro (ทดลอง) — กำลังค้นหาสูงสุด</option>
+            <option value="pro+">Pro Max (ทดลอง) — ใช้งบสูงสุดตามอุปกรณ์</option>
           </select>
         </div>
 
@@ -953,11 +993,18 @@
         badge: '2 ดั้ง (ยอดฝีมือ)',
         desc: 'ค้นหาลึกมากขึ้น โดยจำกัดการสุ่มเลือกหมาก'
       },
-      '3d': {
-        badge: '3 ดั้ง (ระดับอาจารย์)',
-        desc: 'ระดับสูงสุดของโปรไฟล์นี้ ใช้งบค้นหาและเวลาคิดมากที่สุด'
-      }
+      '3d': { badge: '3 ดั้ง (โปรไฟล์เดิม)', desc: 'โปรไฟล์เดิมที่ใช้เป็นจุดเปรียบเทียบ' },
+      '4d': { badge: '4 ดั้ง · ทดลอง', desc: 'เพิ่มงบค้นหา เหมาะสำหรับผู้เล่นระดับสูง ชื่อระดับยังไม่ใช่แรงก์ที่ผ่านการเทียบ' },
+      '5d': { badge: '5 ดั้ง · ทดลอง', desc: 'ค้นหาลึกขึ้นด้วยโปรไฟล์ขั้นสูง ยังต้องทดสอบกับผู้เล่นอ้างอิงเพื่อเทียบแรงก์' },
+      '6d': { badge: '6 ดั้ง · ทดลอง', desc: 'ใช้งบค้นหาและเวลาคิดมากขึ้น ชื่อระดับเป็นเพียงเป้าหมายการปรับความยาก' },
+      '7d': { badge: '7 ดั้ง · ทดลอง', desc: 'โปรไฟล์ค้นหาสูง ใช้เวลาคิดเพิ่มขึ้นตามกำลังเครื่อง' },
+      '8d': { badge: '8 ดั้ง · ทดลอง', desc: 'โปรไฟล์ค้นหาสูงมาก ไม่ได้รับรองว่าเทียบเท่าผู้เล่น 8 ดั้ง' },
+      'pro': { badge: 'ระดับ Pro · ทดลอง', desc: 'โปรไฟล์สำหรับทดสอบกำลัง AI สูง ใช้เวลาคิดต่อเกมมากขึ้น' },
+      'pro+': { badge: 'Pro Max · ทดลอง', desc: 'งบค้นหาสูงสุดในชุดโปรไฟล์ จำกัดตามอุปกรณ์เพื่อป้องกันการค้าง' }
     };
+
+    // Review snapshots are rebuilt from the recorded move sequence, not by mutating the live game.
+    let reviewSession = null;
 
     function idxToCoordLabel(idx) {
       if (idx === null || idx === undefined || idx < 0 || idx >= TOTAL_CELLS) return 'Pass';
@@ -2750,11 +2797,16 @@
         this.pending = new Map();
         this.generation = 0;
         this.fallbackNoticeShown = false;
-        this.netFile = 'model-b10c128.bin.gz';
         this.engineBase = 'katago/';
-        this.assetVersion = '20261119-v3';
+        this.assetVersion = '20261119-pro1';
         this.forceCpu = new URLSearchParams(window.location.search).has('cpu');
         this.retriedWithCpu = false;
+        this.mobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+        this.deviceMemoryGb = Number(navigator.deviceMemory) || 0;
+        this.tf3NetFile = 'model-tf3-b11c768.bin.gz';
+        this.useTf3Model = !this.forceCpu && !this.mobileDevice && this.deviceMemoryGb >= 8;
+        this.modelTier = this.useTf3Model ? 'TF3 B11C768' : 'B10C128';
+        this.netFile = this.useTf3Model ? this.tf3NetFile : 'model-b10c128.bin.gz';
         this.profiles = {
           '8k': { cap: 12,   visits: 24,   ms: 900,  temp: 0.90, policyTemp: 1.60 },
           '7k': { cap: 24,   visits: 40,   ms: 1100, temp: 0.82, policyTemp: 1.52 },
@@ -2766,7 +2818,14 @@
           '1k': { cap: 600,  visits: 800,  ms: 3600, temp: 0.15, policyTemp: 1.09 },
           '1d': { cap: 900,  visits: 1200, ms: 4500, temp: 0.08, policyTemp: 1.04 },
           '2d': { cap: 1500, visits: 1900, ms: 5500, temp: 0.03, policyTemp: 1.00 },
-          '3d': { cap: 0,    visits: 2800, ms: 7000, temp: 0.00, policyTemp: 1.00 }
+          '3d': { cap: 0,    visits: 2800, ms: 7000, temp: 0.00, policyTemp: 1.00 },
+          '4d': { cap: 0, visits: 3600, ms: 9000, temp: 0.00, policyTemp: 1.00 },
+          '5d': { cap: 0, visits: 4500, ms: 12000, temp: 0.00, policyTemp: 1.00 },
+          '6d': { cap: 0, visits: 5500, ms: 16000, temp: 0.00, policyTemp: 1.00 },
+          '7d': { cap: 0, visits: 7000, ms: 22000, temp: 0.00, policyTemp: 1.00 },
+          '8d': { cap: 0, visits: 9000, ms: 28000, temp: 0.00, policyTemp: 1.00 },
+          'pro': { cap: 0, visits: 12000, ms: 40000, temp: 0.00, policyTemp: 1.00 },
+          'pro+': { cap: 0, visits: 18000, ms: 60000, temp: 0.00, policyTemp: 1.00 }
         };
       }
 
@@ -2855,7 +2914,7 @@
               optimism: 0
             }, [wasmBinary]);
             this.ready = true;
-            this.setStatus(`พร้อมใช้งาน · ${info.backend}`, true);
+            this.setStatus(`พร้อมใช้งาน · ${info.backend} · ${this.modelTier}`, true);
             return info;
           })();
         }
@@ -2902,6 +2961,16 @@
           if (generation !== this.generation) return { cancelled: true };
 
           const profile = this.profiles[params.rankKey] || this.profiles['5k'];
+          const isExperimentalHigh = ['4d','5d','6d','7d','8d','pro','pro+'].includes(params.rankKey);
+          let searchVisits = profile.visits;
+          let searchMs = profile.ms;
+          if (isExperimentalHigh && this.mobileDevice) {
+            searchVisits = Math.min(searchVisits, 3200);
+            searchMs = Math.min(searchMs, 10000);
+          } else if (isExperimentalHigh && this.modelTier !== 'TF3 B11C768') {
+            searchVisits = Math.min(searchVisits, 6000);
+            searchMs = Math.min(searchMs, 20000);
+          }
           await this.call({
             type: 'strength',
             visits: profile.cap,
@@ -2916,8 +2985,8 @@
             moves: this.getMoveSequence(),
             toPlay: params.aiColor,
             komi: params.komi,
-            visits: profile.visits,
-            ms: profile.ms,
+            visits: searchVisits,
+            ms: searchMs,
             threads: this.getSearchThreads(),
             noPonder: true
           });
@@ -2930,6 +2999,11 @@
           if (!this.forceCpu && !this.retriedWithCpu) {
             this.retriedWithCpu = true;
             this.forceCpu = true;
+            if (this.useTf3Model) {
+              this.netFile = 'model-b10c128.bin.gz';
+              this.modelTier = 'B10C128 CPU-safe fallback';
+              this.useTf3Model = false;
+            }
             console.warn('[KataGo] WebGPU failed, retrying with Eigen CPU backend:', error);
             try { this.worker?.terminate(); } catch (_) {}
             this.worker = null;
@@ -3366,6 +3440,7 @@
     // Board Setup, Handicap & Start Game Gate
     // -------------------------------------------------------------------------
     function setupNewBoard(options = {}) {
+      reviewSession = null;
       aiController.cancelPending();
 
       if (options.playerColor !== undefined) state.playerColor = options.playerColor;
@@ -3928,6 +4003,7 @@
         return;
       }
 
+      reviewSession = null;
       aiController.cancelPending();
 
       // Switch to AI/Local mode if currently in lobby
@@ -4183,6 +4259,112 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       showToast('ดาวน์โหลดไฟล์บันทึก .SGF เรียบร้อยแล้ว', 'success');
+    }
+
+    function buildReviewTimeline() {
+      const board = new Uint8Array(TOTAL_CELLS);
+      let currentTurn = BLACK;
+      let koPoint = -1;
+      let lastMove = -1;
+      let blackCaptures = 0;
+      let whiteCaptures = 0;
+      let consecutivePasses = 0;
+
+      if (state.mode === 'ai' && state.handicap >= 2) {
+        for (let i = 0; i < Math.min(9, state.handicap); i++) {
+          const [hr, hc] = HANDICAP_POINTS[i];
+          board[hr * BOARD_SIZE + hc] = BLACK;
+        }
+        currentTurn = WHITE;
+      }
+
+      const snapshot = (moveNumber, move = null) => ({
+        board: new Uint8Array(board),
+        currentTurn, koPoint, lastMove, moveNumber,
+        blackCaptures, whiteCaptures, consecutivePasses,
+        scoringMode: false, deadStones: new Set(), territoryMap: null,
+        gameStarted: true, gameOver: true, aiThinking: false, clockPaused: true,
+        reviewMove: move
+      });
+      const frames = [snapshot(0)];
+
+      for (let i = 0; i < state.moveHistory.length; i++) {
+        const move = state.moveHistory[i];
+        const color = move.color === WHITE ? WHITE : BLACK;
+        if (move.idx >= 0) {
+          const result = GoRulesEngine.tryPlayMove(board, move.idx, color, koPoint);
+          if (!result.valid) {
+            throw new Error(`อ่านประวัติไม่ต่อเนื่องที่ตา ${i + 1}: ${result.reason}`);
+          }
+          board.set(result.board);
+          koPoint = result.koPoint;
+          lastMove = move.idx;
+          if (color === BLACK) blackCaptures += result.captured;
+          else whiteCaptures += result.captured;
+          consecutivePasses = 0;
+        } else {
+          koPoint = -1;
+          lastMove = -1;
+          consecutivePasses++;
+        }
+        currentTurn = color === BLACK ? WHITE : BLACK;
+        frames.push(snapshot(i + 1, move));
+      }
+      return frames;
+    }
+
+    function openGameReview() {
+      if (!state.gameOver || state.moveHistory.length === 0) {
+        showToast('ยังไม่มีประวัติหมากให้ทบทวน', 'info');
+        return;
+      }
+      try {
+        reviewSession = { frames: buildReviewTimeline(), index: 0 };
+        document.getElementById('scoreModal').classList.add('hidden');
+        updateReviewControlsUI();
+        renderGame();
+      } catch (error) {
+        reviewSession = null;
+        showToast(`ไม่สามารถสร้างกระดานย้อนหลังได้: ${error.message}`, 'error');
+      }
+    }
+
+    function setReviewMove(index) {
+      if (!reviewSession) return;
+      reviewSession.index = Math.max(0, Math.min(reviewSession.frames.length - 1, Number(index) || 0));
+      renderer.draw(reviewSession.frames[reviewSession.index]);
+      updateReviewControlsUI();
+    }
+
+    function updateReviewControlsUI() {
+      const postGame = document.getElementById('postGameReviewActions');
+      const controls = document.getElementById('reviewControls');
+      if (!postGame || !controls) return;
+      const hasMoves = state.gameOver && state.moveHistory.length > 0;
+      postGame.classList.toggle('hidden', !hasMoves || !!reviewSession);
+      controls.classList.toggle('hidden', !reviewSession);
+      if (!reviewSession) return;
+
+      const max = reviewSession.frames.length - 1;
+      const index = reviewSession.index;
+      const frame = reviewSession.frames[index];
+      const slider = document.getElementById('reviewMoveSlider');
+      slider.max = String(max);
+      slider.value = String(index);
+      const move = frame.reviewMove;
+      const moveText = index === 0
+        ? 'เริ่มกระดาน · ตา 0'
+        : `ตา ${index} · ${move?.color === BLACK ? 'ดำ' : 'ขาว'} ${move?.coord || (move?.idx < 0 ? 'Pass' : '')}`;
+      document.getElementById('reviewMoveLabel').textContent = `${moveText} · ${index}/${max}`;
+      document.getElementById('btnReviewFirst').disabled = index === 0;
+      document.getElementById('btnReviewPrev').disabled = index === 0;
+      document.getElementById('btnReviewNext').disabled = index === max;
+      document.getElementById('btnReviewLast').disabled = index === max;
+    }
+
+    function closeGameReview() {
+      reviewSession = null;
+      renderGame();
     }
 
     function importSgfText(sgfText) {
@@ -4674,7 +4856,8 @@
     }
 
     function renderGame() {
-      renderer.draw(state);
+      renderer.draw(reviewSession ? reviewSession.frames[reviewSession.index] : state);
+      updateReviewControlsUI();
       updateClocksUI();
       if (!state.lastAiScoreEval) {
         updateAiScoreMonitorUI(null);
@@ -4863,18 +5046,19 @@
       const idx = renderer.clientToIntersection(e.clientX, e.clientY);
       if (idx !== renderer.hoverIdx) {
         renderer.hoverIdx = idx;
-        renderer.draw(state);
+        renderer.draw(reviewSession ? reviewSession.frames[reviewSession.index] : state);
       }
     });
 
     gobanCanvas.addEventListener('mouseleave', () => {
       if (renderer.hoverIdx !== -1) {
         renderer.hoverIdx = -1;
-        renderer.draw(state);
+        renderer.draw(reviewSession ? reviewSession.frames[reviewSession.index] : state);
       }
     });
 
     gobanCanvas.addEventListener('click', (e) => {
+      if (reviewSession) return;
       const idx = renderer.clientToIntersection(e.clientX, e.clientY);
       if (idx < 0) return;
 
@@ -5002,6 +5186,15 @@
     document.getElementById('btnCloseLoadModal').addEventListener('click', () => document.getElementById('loadGameModal').classList.add('hidden'));
     document.getElementById('btnDoneLoadModal').addEventListener('click', () => document.getElementById('loadGameModal').classList.add('hidden'));
     document.getElementById('btnExportSgfFromLoad').addEventListener('click', exportCurrentGameAsSgf);
+
+    document.getElementById('btnOpenReview').addEventListener('click', openGameReview);
+    document.getElementById('btnExportSgfAfterGame').addEventListener('click', exportCurrentGameAsSgf);
+    document.getElementById('btnReviewFirst').addEventListener('click', () => setReviewMove(0));
+    document.getElementById('btnReviewPrev').addEventListener('click', () => setReviewMove((reviewSession?.index || 0) - 1));
+    document.getElementById('btnReviewNext').addEventListener('click', () => setReviewMove((reviewSession?.index || 0) + 1));
+    document.getElementById('btnReviewLast').addEventListener('click', () => setReviewMove((reviewSession?.frames.length || 1) - 1));
+    document.getElementById('btnCloseReview').addEventListener('click', closeGameReview);
+    document.getElementById('reviewMoveSlider').addEventListener('input', (e) => setReviewMove(e.target.value));
 
     document.getElementById('btnImportSgf').addEventListener('click', () => {
       document.getElementById('sgfFileInput').click();
