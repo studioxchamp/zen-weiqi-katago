@@ -904,12 +904,15 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-3 gap-2">
+      <div class="grid grid-cols-2 gap-2">
         <button id="btnResumeFromScore" type="button" class="zen-btn py-2.5 px-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-100 text-xs sm:text-sm font-semibold">
           ปิดหน้าต่าง
         </button>
         <button id="btnReviewFromScore" type="button" class="zen-btn py-2.5 px-2 rounded-xl bg-amber-700 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold">
           ⏮ ดูย้อนหลัง
+        </button>
+        <button id="btnExportSgfFromResult" type="button" class="zen-btn py-2.5 px-2 rounded-xl bg-emerald-900/60 hover:bg-emerald-800/70 border border-emerald-500/40 text-emerald-200 text-xs sm:text-sm font-bold">
+          📥 ดาวน์โหลด SGF
         </button>
         <button id="btnNewGameFromScore" type="button" class="zen-btn py-2.5 px-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs sm:text-sm font-bold">
           เริ่มเกมใหม่
@@ -5247,6 +5250,7 @@
     document.getElementById('btnReviewLast').addEventListener('click', () => setReviewMove((reviewSession?.frames.length || 1) - 1));
     document.getElementById('btnCloseReview').addEventListener('click', closeGameReview);
     document.getElementById('btnReviewFromScore').addEventListener('click', openGameReview);
+    document.getElementById('btnExportSgfFromResult').addEventListener('click', exportCurrentGameAsSgf);
     document.getElementById('reviewMoveSlider').addEventListener('input', (e) => setReviewMove(e.target.value));
 
     document.getElementById('btnImportSgf').addEventListener('click', () => {
