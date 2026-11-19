@@ -186,7 +186,7 @@ try {
   results.checks.engineWorker = workerResult;
   await enginePage.close();
 
-  const gamePage = await browser.newPage({ viewport: { width: 1360, height: 1000 } });
+  const gamePage = await browser.newPage({ viewport: { width: 1360, height: 1000 }, acceptDownloads: true });
   gamePage.on('pageerror', (e) => results.errors.push(`game pageerror: ${e.message}`));
   gamePage.on('console', (msg) => { if (msg.type() === 'error') results.errors.push(`game console: ${msg.text()}`); });
   await gamePage.goto(origin, { waitUntil: 'networkidle' });
@@ -214,7 +214,7 @@ try {
     return !!el && !el.classList.contains('hidden');
   }, { timeout: 10000 });
 
-  const downloadPromise = gamePage.waitForEvent('download');
+  const downloadPromise = gamePage.waitForEvent('download', { timeout: 60000 });
   await gamePage.locator('#btnExportSgfAfterGame').click();
   const sgfDownload = await downloadPromise;
   const sgfPath = await sgfDownload.path();
