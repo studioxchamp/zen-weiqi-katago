@@ -66,6 +66,35 @@ jobs:
           node --input-type=module -e "import {readFileSync,statSync} from 'node:fs'; const p='site/katago/kataeval-mt.wasm'; const w=readFileSync(p); if (w[0]!==0||w[1]!==97||w[2]!==115||w[3]!==109) throw new Error('invalid WASM magic'); await WebAssembly.compile(w); console.log('PASS compiled threaded WASM:',statSync(p).size,'bytes');"
           node engine-src/web/test-search-mt.mjs
 
+      - name: Publish official TF3 network as a GitHub Release asset
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="kata1-tf3-b11c768-s12382M-d6533M"
+          ASSET="model-tf3-b11c768.bin.gz"
+          MODEL="$RUNNER_TEMP/$ASSET"
+          REPO="$GITHUB_REPOSITORY"
+          if gh release view "$TAG" --repo "$REPO" --json assets --jq '.assets[].name' 2>/dev/null | grep -Fxq "$ASSET"; then
+            echo "TF3 release asset already exists; reusing it."
+          else
+            SOURCE="https://media.katagotraining.org/uploaded/networks/models/kata1/kata1-tf3-b11c768-s12382M-d6533M.bin.gz"
+            echo "Downloading official KataGo TF3 network..."
+            curl --fail --location --retry 5 --retry-delay 3 --retry-all-errors "$SOURCE" --output "$MODEL"
+            gzip -t "$MODEL"
+            sha256sum "$MODEL" | tee .validation/tf3-model-sha256.txt
+            stat -c 'TF3 compressed model bytes: %s' "$MODEL"
+            if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+              gh release upload "$TAG" "$MODEL" --repo "$REPO" --clobber
+            else
+              gh release create "$TAG" "$MODEL" --repo "$REPO" \
+                --title "KataGo TF3 B11C768 network" \
+                --notes "Official kata1-tf3-b11c768-s12382M-d6533M network file. Source: https://katagotraining.org/networks/ . This large model is hosted as a release asset and is not bundled into the Netlify site."
+            fi
+          fi
+          echo "TF3 asset URL: https://github.com/$REPO/releases/download/$TAG/$ASSET"
+
       - name: Install Chromium test runner
         run: |
           npm install --no-save playwright
