@@ -2814,7 +2814,7 @@
         this.mobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
         this.deviceMemoryGb = Number(navigator.deviceMemory) || 0;
         this.forceTf3 = new URLSearchParams(window.location.search).has('tf3');
-        this.tf3NetFile = 'https://media.katagotraining.org/uploaded/networks/models/kata1/kata1-tf3-b11c768-s12382M-d6533M.bin.gz';
+        this.tf3NetFile = 'https://github.com/studioxchamp/zen-weiqi-katago/releases/download/kata1-tf3-b11c768-s12382M-d6533M/model-tf3-b11c768.bin.gz';
         this.useTf3Model = !this.forceCpu && !this.mobileDevice && (this.forceTf3 || this.deviceMemoryGb >= 8);
         this.modelTier = this.useTf3Model ? 'TF3 B11C768' : 'B10C128';
         this.netFile = this.useTf3Model ? this.tf3NetFile : 'model-b10c128.bin.gz';
