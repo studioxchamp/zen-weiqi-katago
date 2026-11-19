@@ -5052,7 +5052,7 @@
 
       // Clock Paused Banner & Scoring Banner
       document.getElementById('clockPausedBanner').classList.toggle('hidden', !state.clockPaused);
-      document.getElementById('scoringBanner').classList.toggle('hidden', !state.scoringMode);
+      document.getElementById('scoringBanner').classList.toggle('hidden', !state.scoringMode || !!reviewSession);
 
       // Pause Clock Button state
       const btnPause = document.getElementById('btnPauseClock');
@@ -5063,8 +5063,8 @@
 
       // Command Buttons
       document.getElementById('btnPass').disabled = !canLocalPlayerAct();
-      document.getElementById('btnUndo').disabled = state.mode !== 'ai' || state.aiThinking || state.scoringMode || state.undoStack.length === 0;
-      document.getElementById('btnCountScore').disabled = !state.gameStarted || state.aiThinking;
+      document.getElementById('btnUndo').disabled = !!reviewSession || state.mode !== 'ai' || state.aiThinking || state.scoringMode || state.undoStack.length === 0;
+      document.getElementById('btnCountScore').disabled = !!reviewSession || !state.gameStarted || state.gameOver || state.aiThinking;
       document.getElementById('btnResign').disabled = !state.gameStarted || state.gameOver || (state.mode === 'online' && !state.onlineConnected);
 
       // Handicap badge & Move history box
