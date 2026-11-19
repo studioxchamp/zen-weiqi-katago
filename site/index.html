@@ -432,12 +432,12 @@
           <option value="1d">1 ดั้ง (ระดับสูง) — วิเคราะห์เชิงลึกมาตรฐาน</option>
           <option value="2d">2 ดั้ง (ยอดฝีมือ) — อ่านชิโจขั้นบันได & RAVE เชิงลึก</option>
           <option value="3d">3 ดั้ง — โปรไฟล์สูงสุดเดิม</option>
-            <option value="4d">4 ดั้ง (ระดับสูง) — เริ่มเข้าสู่ระดับยอดฝีมือ</option>
-            <option value="5d">5 ดั้ง (ยอดฝีมือ) — โปรไฟล์ค้นหาขั้นสูง</option>
-            <option value="6d">6 ดั้ง (ยอดฝีมือสูง) — ค้นหาเข้มข้น</option>
-            <option value="7d">7 ดั้ง (ระดับแข่งขัน) — ใช้งบค้นหาสูง</option>
-            <option value="8d">8 ดั้ง (ระดับสูงมาก) — ใช้งบค้นหาสูงมาก</option>
-            <option value="pro">Pro (ทดลอง) — กำลังค้นหาสูงสุด</option>
+            <option value="4d">4 ดั้ง (ทดลอง) — เริ่มเข้าสู่ระดับยอดฝีมือ</option>
+            <option value="5d">5 ดั้ง (ทดลอง) — โปรไฟล์ค้นหาขั้นสูง</option>
+            <option value="6d">6 ดั้ง (ทดลอง) — ค้นหาเข้มข้น</option>
+            <option value="7d">7 ดั้ง (ทดลอง) — ใช้งบค้นหาสูง</option>
+            <option value="8d">8 ดั้ง (ทดลอง) — ใช้งบค้นหาสูงมาก</option>
+            <option value="pro+">Pro Max (ทดลอง) — กำลังค้นหาสูงสุด</option>
             <option value="pro+">Pro Max (ทดลอง) — ใช้งบสูงสุดตามอุปกรณ์</option>
         </select>
 
@@ -451,7 +451,10 @@
           </div>
         </div>
         <p class="text-[10px] text-amber-200/45 leading-relaxed">
-          * ชื่อคิว/ดั้งเป็นระดับความท้าทายโดยประมาณจากการจำกัดการค้นหา ไม่ใช่การจัดอันดับฝีมือที่ผ่านการเทียบมาตรฐาน
+          * ระดับคิว/ดั้งเป็นโปรไฟล์ความท้าทายจากงบค้นหา ไม่ใช่แรงก์มนุษย์ที่ผ่านการเทียบมาตรฐาน ระดับ 4d ขึ้นไปและ Pro เป็นโหมดทดลอง
+        </p>
+        <p class="text-[10px] text-amber-200/45 leading-relaxed">
+          * โมเดล TF3 B11C768 จะลองใช้บนคอมพิวเตอร์ที่เหมาะสมเท่านั้น หากโหลดไม่ได้จะถอยไปใช้ B10C128 โดยอัตโนมัติ
         </p>
 
         <!-- Real-Time AI Score Evaluation Monitor -->
@@ -2804,8 +2807,9 @@
         this.retriedWithB10 = false;
         this.mobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
         this.deviceMemoryGb = Number(navigator.deviceMemory) || 0;
+        this.forceTf3 = new URLSearchParams(window.location.search).has('tf3');
         this.tf3NetFile = 'https://media.katagotraining.org/uploaded/networks/models/kata1/kata1-tf3-b11c768-s12382M-d6533M.bin.gz';
-        this.useTf3Model = !this.forceCpu && !this.mobileDevice && this.deviceMemoryGb >= 8;
+        this.useTf3Model = !this.forceCpu && !this.mobileDevice && (this.forceTf3 || this.deviceMemoryGb >= 8);
         this.modelTier = this.useTf3Model ? 'TF3 B11C768' : 'B10C128';
         this.netFile = this.useTf3Model ? this.tf3NetFile : 'model-b10c128.bin.gz';
         this.profiles = {
@@ -4033,6 +4037,7 @@
       state.lastMove = typeof data.lastMove === 'number' ? data.lastMove : -1;
       state.moveNumber = data.moveNumber || 0;
       state.moveHistory = Array.isArray(data.moveHistory) ? data.moveHistory : [];
+      state.handicap = data.handicap || 0;
       state.initialBoard = (Array.isArray(data.initialBoard) && data.initialBoard.length === TOTAL_CELLS)
         ? new Uint8Array(data.initialBoard)
         : new Uint8Array(TOTAL_CELLS);
@@ -4051,7 +4056,6 @@
       state.playerColor = data.playerColor || BLACK;
       state.aiColor = state.playerColor === BLACK ? WHITE : BLACK;
       state.aiRank = data.aiRank || state.aiRank;
-      state.handicap = data.handicap || 0;
       state.komi = typeof data.komi === 'number' ? data.komi : 6.5;
       state.timeLimitPerPlayer = typeof data.timeLimitPerPlayer === 'number' ? data.timeLimitPerPlayer : DEFAULT_TIME_LIMIT;
       state.blackTimeRemaining = typeof data.blackTimeRemaining === 'number' ? data.blackTimeRemaining : state.timeLimitPerPlayer;
@@ -4410,18 +4414,17 @@
         setupNewBoard({ handicap, timeLimit: state.timeLimitPerPlayer });
         state.komi = komi;
 
-        // Parse AB[...] setup stones if any
+        // SGF setup stones (AB/AW) replace the standard starting arrangement.
         const abBlock = sgfText.match(/AB((?:\[[a-s]{2}\])+)/i);
+        const awBlock = sgfText.match(/AW((?:\[[a-s]{2}\])+)/i);
+        if (abBlock || awBlock) state.board.fill(EMPTY);
         if (abBlock) {
           const coords = abBlock[1].match(/\[([a-s]{2})\]/gi) || [];
-          state.board.fill(EMPTY);
           coords.forEach(c => {
             const idx = sgfCoordToIdx(c.slice(1, 3));
             if (idx >= 0) state.board[idx] = BLACK;
           });
-          state.currentTurn = WHITE;
         }
-        const awBlock = sgfText.match(/AW((?:\[[a-s]{2}\])+)/i);
         if (awBlock) {
           const coords = awBlock[1].match(/\[([a-s]{2})\]/gi) || [];
           coords.forEach(c => {
@@ -4429,6 +4432,7 @@
             if (idx >= 0) state.board[idx] = WHITE;
           });
         }
+        if (abBlock && !sgfText.match(/PL\[([BW])\]/i)) state.currentTurn = WHITE;
         const playerToPlay = sgfText.match(/PL\[([BW])\]/i);
         if (playerToPlay) state.currentTurn = playerToPlay[1].toUpperCase() === 'W' ? WHITE : BLACK;
         state.initialBoard = new Uint8Array(state.board);
