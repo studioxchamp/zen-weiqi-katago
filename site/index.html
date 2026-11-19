@@ -2801,9 +2801,10 @@
         this.assetVersion = '20261119-pro1';
         this.forceCpu = new URLSearchParams(window.location.search).has('cpu');
         this.retriedWithCpu = false;
+        this.retriedWithB10 = false;
         this.mobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
         this.deviceMemoryGb = Number(navigator.deviceMemory) || 0;
-        this.tf3NetFile = 'model-tf3-b11c768.bin.gz';
+        this.tf3NetFile = 'https://media.katagotraining.org/uploaded/networks/models/kata1/kata1-tf3-b11c768-s12382M-d6533M.bin.gz';
         this.useTf3Model = !this.forceCpu && !this.mobileDevice && this.deviceMemoryGb >= 8;
         this.modelTier = this.useTf3Model ? 'TF3 B11C768' : 'B10C128';
         this.netFile = this.useTf3Model ? this.tf3NetFile : 'model-b10c128.bin.gz';
@@ -2901,8 +2902,9 @@
               wasmResponse.arrayBuffer(),
               jsResponse.text()
             ]);
-            const modelResponse = await fetch(`${this.engineBase}${this.netFile}`, { method: 'HEAD' });
-            if (!modelResponse.ok) throw new Error('ไม่พบไฟล์โมเดล KataGo');
+            const modelUrl = /^https?:\/\//i.test(this.netFile) ? this.netFile : `${this.engineBase}${this.netFile}`;
+            const modelResponse = await fetch(modelUrl, { method: 'HEAD', mode: 'cors' });
+            if (!modelResponse.ok) throw new Error(`ไม่พบไฟล์โมเดล KataGo (${modelResponse.status})`);
             const info = await this.call({
               type: 'init',
               netFile: this.netFile,
@@ -2996,14 +2998,22 @@
           return result.best;
         } catch (error) {
           if (generation !== this.generation) return { cancelled: true };
+          if (this.useTf3Model && !this.retriedWithB10) {
+            this.retriedWithB10 = true;
+            this.useTf3Model = false;
+            this.netFile = 'model-b10c128.bin.gz';
+            this.modelTier = 'B10C128 WebGPU fallback';
+            console.warn('[KataGo] TF3 model unavailable, retrying with B10C128 on WebGPU:', error);
+            try { this.worker?.terminate(); } catch (_) {}
+            this.worker = null;
+            this.ready = false;
+            this.initPromise = null;
+            return await this.requestMove(params);
+          }
           if (!this.forceCpu && !this.retriedWithCpu) {
             this.retriedWithCpu = true;
             this.forceCpu = true;
-            if (this.useTf3Model) {
-              this.netFile = 'model-b10c128.bin.gz';
-              this.modelTier = 'B10C128 CPU-safe fallback';
-              this.useTf3Model = false;
-            }
+            this.modelTier = 'B10C128 CPU fallback';
             console.warn('[KataGo] WebGPU failed, retrying with Eigen CPU backend:', error);
             try { this.worker?.terminate(); } catch (_) {}
             this.worker = null;
@@ -3332,6 +3342,8 @@
       lastMove: -1,
       moveNumber: 0,
       moveHistory: [], // Array of { color, idx, coord }
+      initialBoard: new Uint8Array(TOTAL_CELLS),
+      initialTurn: BLACK,
       undoStack: [],
       blackCaptures: 0,
       whiteCaptures: 0,
@@ -3484,6 +3496,8 @@
       } else {
         state.currentTurn = BLACK;
       }
+      state.initialBoard = new Uint8Array(state.board);
+      state.initialTurn = state.currentTurn;
 
       syncRankUI();
       renderGame();
@@ -3984,6 +3998,8 @@
         lastMove: state.lastMove,
         moveNumber: state.moveNumber,
         moveHistory: state.moveHistory.slice(),
+        initialBoard: Array.from(state.initialBoard || []),
+        initialTurn: state.initialTurn || BLACK,
         blackCaptures: state.blackCaptures,
         whiteCaptures: state.whiteCaptures,
         playerColor: state.playerColor,
@@ -4017,6 +4033,18 @@
       state.lastMove = typeof data.lastMove === 'number' ? data.lastMove : -1;
       state.moveNumber = data.moveNumber || 0;
       state.moveHistory = Array.isArray(data.moveHistory) ? data.moveHistory : [];
+      state.initialBoard = (Array.isArray(data.initialBoard) && data.initialBoard.length === TOTAL_CELLS)
+        ? new Uint8Array(data.initialBoard)
+        : new Uint8Array(TOTAL_CELLS);
+      if (!(Array.isArray(data.initialBoard) && data.initialBoard.length === TOTAL_CELLS) && state.handicap >= 2) {
+        for (let i = 0; i < Math.min(9, state.handicap); i++) {
+          const [hr, hc] = HANDICAP_POINTS[i];
+          state.initialBoard[hr * BOARD_SIZE + hc] = BLACK;
+        }
+      }
+      state.initialTurn = data.initialTurn === BLACK || data.initialTurn === WHITE
+        ? data.initialTurn
+        : (state.handicap >= 2 ? WHITE : BLACK);
       state.undoStack = [];
       state.blackCaptures = data.blackCaptures || 0;
       state.whiteCaptures = data.whiteCaptures || 0;
@@ -4233,14 +4261,25 @@
 
     function exportCurrentGameAsSgf() {
       const dateStr = new Date().toISOString().slice(0, 10);
-      let sgf = `(;GM[1]FF[4]CA[UTF-8]AP[ZenWeiqi19x19:1.0]SZ[19]KM[${state.komi}]DT[${dateStr}]`;
-      if (state.handicap >= 2) {
-        sgf += `HA[${state.handicap}]AB`;
-        for (let i = 0; i < Math.min(9, state.handicap); i++) {
-          const [hr, hc] = HANDICAP_POINTS[i];
-          sgf += `[${idxToSgfCoord(hr * BOARD_SIZE + hc)}]`;
-        }
+      const sgfEscape = (value) => String(value ?? '').replace(/\\/g, '\\\\').replace(/\]/g, '\\]');
+      const blackName = state.mode === 'ai'
+        ? (state.aiColor === BLACK ? 'KataGo' : 'Player')
+        : (state.blackPlayerName || 'Black');
+      const whiteName = state.mode === 'ai'
+        ? (state.aiColor === WHITE ? 'KataGo' : 'Player')
+        : (state.whitePlayerName || 'White');
+      let sgf = `(;GM[1]FF[4]CA[UTF-8]AP[ZenWeiqi19x19:1.1]SZ[19]KM[${state.komi}]DT[${dateStr}]PB[${sgfEscape(blackName)}]PW[${sgfEscape(whiteName)}]`;
+      if (state.handicap >= 2) sgf += `HA[${state.handicap}]`;
+      const initial = state.initialBoard instanceof Uint8Array ? state.initialBoard : new Uint8Array(TOTAL_CELLS);
+      const setupBlack = [];
+      const setupWhite = [];
+      for (let idx = 0; idx < TOTAL_CELLS; idx++) {
+        if (initial[idx] === BLACK) setupBlack.push(idxToSgfCoord(idx));
+        else if (initial[idx] === WHITE) setupWhite.push(idxToSgfCoord(idx));
       }
+      if (setupBlack.length) sgf += `AB${setupBlack.map(c => `[${c}]`).join('')}`;
+      if (setupWhite.length) sgf += `AW${setupWhite.map(c => `[${c}]`).join('')}`;
+      if (state.initialTurn === WHITE) sgf += 'PL[W]';
       for (let i = 0; i < state.moveHistory.length; i++) {
         const mv = state.moveHistory[i];
         const tag = mv.color === BLACK ? 'B' : 'W';
@@ -4262,21 +4301,15 @@
     }
 
     function buildReviewTimeline() {
-      const board = new Uint8Array(TOTAL_CELLS);
-      let currentTurn = BLACK;
+      const board = state.initialBoard instanceof Uint8Array
+        ? new Uint8Array(state.initialBoard)
+        : new Uint8Array(TOTAL_CELLS);
+      let currentTurn = state.initialTurn === WHITE ? WHITE : BLACK;
       let koPoint = -1;
       let lastMove = -1;
       let blackCaptures = 0;
       let whiteCaptures = 0;
       let consecutivePasses = 0;
-
-      if (state.mode === 'ai' && state.handicap >= 2) {
-        for (let i = 0; i < Math.min(9, state.handicap); i++) {
-          const [hr, hc] = HANDICAP_POINTS[i];
-          board[hr * BOARD_SIZE + hc] = BLACK;
-        }
-        currentTurn = WHITE;
-      }
 
       const snapshot = (moveNumber, move = null) => ({
         board: new Uint8Array(board),
@@ -4388,6 +4421,18 @@
           });
           state.currentTurn = WHITE;
         }
+        const awBlock = sgfText.match(/AW((?:\[[a-s]{2}\])+)/i);
+        if (awBlock) {
+          const coords = awBlock[1].match(/\[([a-s]{2})\]/gi) || [];
+          coords.forEach(c => {
+            const idx = sgfCoordToIdx(c.slice(1, 3));
+            if (idx >= 0) state.board[idx] = WHITE;
+          });
+        }
+        const playerToPlay = sgfText.match(/PL\[([BW])\]/i);
+        if (playerToPlay) state.currentTurn = playerToPlay[1].toUpperCase() === 'W' ? WHITE : BLACK;
+        state.initialBoard = new Uint8Array(state.board);
+        state.initialTurn = state.currentTurn;
 
         // Parse sequential moves ;B[..] / ;W[..]
         const moveTokens = sgfText.match(/;([BW])\[([a-s]{0,2})\]/gi) || [];
