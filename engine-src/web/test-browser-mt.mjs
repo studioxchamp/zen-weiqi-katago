@@ -215,7 +215,7 @@ try {
   }, { timeout: 10000 });
 
   const downloadPromise = gamePage.waitForEvent('download', { timeout: 60000 });
-  await gamePage.locator('#btnExportSgfAfterGame').click();
+  await gamePage.locator('#btnExportSgfFromResult').click();
   const sgfDownload = await downloadPromise;
   const sgfPath = await sgfDownload.path();
   assert(sgfPath, 'SGF download did not produce a local file');
