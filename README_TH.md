@@ -69,7 +69,7 @@ Workflow จะไม่อัปโหลด Netlify site artifact หากข
 - TF3 มีพารามิเตอร์ประมาณ 70.4 ล้านตัวและมีต้นทุนการประเมินต่อ visit สูงกว่าโมเดลขนาดเล็ก จึงไม่ได้หมายความว่าจะเร็วกว่า B10C128 บนทุกอุปกรณ์
 - ระดับ 4d–8d, Pro และ Pro Max เป็น **โปรไฟล์งบค้นหาแบบทดลอง** ไม่ใช่การรับรองว่าเทียบเท่าแรงก์มนุษย์จริง ต้องเทียบผลการแข่งขันกับผู้เล่นที่มีแรงก์อ้างอิงก่อน
 
-แหล่งโมเดล TF3: https://katagotraining.org/networks/
+แหล่งโมเดล TF3: https://katagotraining.org/networks/\nไฟล์ที่เว็บเรียกใช้ผ่าน GitHub Release asset: https://github.com/studioxchamp/zen-weiqi-katago/releases/download/kata1-tf3-b11c768-s12382M-d6533M/model-tf3-b11c768.bin.gz
 
 ## ทบทวนเกมและบันทึก SGF
 
