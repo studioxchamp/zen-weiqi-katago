@@ -1,0 +1,8 @@
+name = "mechampz-katago-drive-gateway"
+main = "src/index.js"
+compatibility_date = "2026-11-19"
+
+[vars]
+# Set the two Drive file IDs as secrets or vars after uploading the model files.
+# DRIVE_FILE_ID_DESKTOP = "..."
+# DRIVE_FILE_ID_MOBILE = "..."
