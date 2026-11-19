@@ -224,7 +224,8 @@ try {
   assert(sgfText.includes('PB[') && sgfText.includes('PW['), 'exported SGF player names are missing');
   assert(sgfText.includes(';B[') || sgfText.includes(';W['), 'exported SGF contains no move nodes');
 
-  await gamePage.locator('#btnOpenReview').click();
+  await gamePage.locator('#btnReviewFromScore').click();
+  assert(await gamePage.locator('#scoreModal').evaluate(el => el.classList.contains('hidden')), 'result dialog did not close when opening review');
   await gamePage.waitForFunction(() => {
     const el = document.querySelector('#reviewControls');
     return !!el && !el.classList.contains('hidden');
